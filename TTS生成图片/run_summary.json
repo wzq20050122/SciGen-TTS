@@ -1,0 +1,465 @@
+[
+  {
+    "id": "Biology_12",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Biology.jsonl",
+    "prompt": "Draw a stepwise schematic diagram illustrating the process of exocytosis in a eukaryotic cell. The diagram should show a vesicle containing proteins moving from the cytoplasm toward the cell membrane, fusing with the membrane, and releasing its protein contents into the extracellular environment. Clearly label the cytoplasm, cell membrane, vesicle, proteins, and extracellular environment, and indicate the direction of vesicle movement and the sequential steps of the process.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Biology/Biology_12.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Biology_Biology_12/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Biology_Biology_12/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Biology_Biology_12/step1/image.png",
+        "answer": true,
+        "explanation": "All requirements specified in the instruction are fulfilled:\n1.  The diagram is a stepwise schematic of exocytosis, correctly showing the sequential process: a vesicle containing proteins moves from the cytoplasm toward the cell membrane, fuses with the membrane, and releases protein contents into the extracellular environment.\n2.  All required labels are present and correctly placed: cytoplasm, cell membrane, vesicle, proteins (the colored circular contents inside the vesicle), and extracellular environment are all clearly labeled.\n3.  The direction of vesicle movement is indicated by arrows, and the sequential steps of exocytosis are properly marked in order.\n4.  The process is scientifically/logically correct for exocytosis in a eukaryotic cell.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Biology_Biology_12/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Biology_116",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Biology.jsonl",
+    "prompt": "Draw a labeled anatomical diagram of the human brain's ventricular system, showing both a lateral view and an anterior view. Clearly indicate and label the lateral ventricles, interventricular foramen, third ventricle, cerebral aqueduct, fourth ventricle, and central canal. Use distinct colors to differentiate the ventricular system from the surrounding brain tissue.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Biology/Biology_116.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Biology_Biology_116/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Biology_Biology_116/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Biology_Biology_116/step1/image.png",
+        "answer": true,
+        "explanation": "All requirements specified in the instruction are fully satisfied:\n1. The diagram includes both requested views (lateral view on the left, anterior view on the right) of the human brain's ventricular system.\n2. All required structures (lateral ventricles, interventricular foramen, third ventricle, cerebral aqueduct, fourth ventricle, and central canal) are clearly indicated and correctly labeled in both views, with anatomically accurate positioning.\n3. The ventricular system is colored blue to clearly differentiate it from the surrounding tan brain tissue, meeting the distinct color requirement.\n4. The diagram is scientifically correct for the human brain ventricular system.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Biology_Biology_116/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Chemistry_51",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Chemistry.jsonl",
+    "prompt": "Draw a schematic diagram illustrating the metallic bonding model in a close-packed metal lattice. Represent metal cations (M⁺) as large spheres arranged in a regular, closely packed pattern, and depict delocalized electrons (e⁻) as smaller spheres distributed among the cations. Clearly label the metal ions and delocalized electrons.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Chemistry/Chemistry_51.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Chemistry_Chemistry_51/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Chemistry_Chemistry_51/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Chemistry_Chemistry_51/step1/image.png",
+        "answer": true,
+        "explanation": "All requirements from the instruction are fully satisfied:\n1.  The diagram correctly illustrates the metallic bonding model for a close-packed metal lattice, with large orange spheres representing M⁺ metal cations arranged in a regular, closely packed pattern.\n2.  Smaller blue spheres are correctly used to represent delocalized electrons (e⁻), which are properly distributed among the metal cations.\n3.  Both the metal ions and delocalized electrons are clearly and correctly labeled (both in the main diagram and the legend), and the scientific content is correct.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Chemistry_Chemistry_51/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Chemistry_13",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Chemistry.jsonl",
+    "prompt": "Draw a schematic diagram illustrating the quantum mechanical model of an atom, showing a central nucleus composed of protons and neutrons, and surrounding it with a probabilistic electron cloud. Use different colors or symbols to distinguish protons, neutrons, and electrons, and include a legend labeling each particle type.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Chemistry/Chemistry_13.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Chemistry_Chemistry_13/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Chemistry_Chemistry_13/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Chemistry_Chemistry_13/step1/image.png",
+        "answer": true,
+        "explanation": "All required elements of the instruction are correctly implemented:\n1. The diagram is a schematic of the quantum mechanical model of an atom, with a correctly labeled central nucleus containing protons and neutrons.\n2. The surrounding probabilistic electron cloud is present, correctly labeled, and visually represents the probability distribution of electrons as required.\n3. Protons, neutrons, and electrons are distinguished by different colors and symbols: red positively charged spheres for protons, gray uncharged spheres for neutrons, and blue negatively charged spheres for electrons.\n4. A complete legend correctly labeling each particle type is included. The diagram is scientifically correct and meets all stated requirements.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Chemistry_Chemistry_13/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Computer_Science_38",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Computer_Science.jsonl",
+    "prompt": "Draw a comparative diagram illustrating the sequence of message exchanges for both iterative and recursive DNS queries when a user at cse.nyu.edu requests the IP address of gaia.cs.umass.edu. Clearly show the roles and interactions among the requesting host, local DNS server (dns.nyu.edu), root DNS server, TLD DNS server, and authoritative DNS server (dns.umass.edu). Indicate the direction and order of each message in both query types.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Computer_Science/Computer_Science_38.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Computer_Science_Computer_Science_38/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Computer_Science_Computer_Science_38/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Computer_Science_Computer_Science_38/step1/image.png",
+        "answer": true,
+        "explanation": "The generated image correctly fulfills all requirements of the instruction:\n1. It provides a side-by-side comparative diagram of iterative (left) and recursive (right) DNS query processes as requested.\n2. All required entities are correctly included and labeled: the requesting user at cse.nyu.edu, local DNS server (dns.nyu.edu), root DNS server, TLD DNS server, and authoritative DNS server (dns.umass.edu) are all present in both diagrams.\n3. The order, direction, and type (query/response) of all messages are correctly illustrated for both query types, matching the correct scientific logic of iterative vs recursive DNS resolution:\n   - Iterative resolution correctly shows each DNS server returning referrals and the original requesting host performing subsequent queries up the hierarchy.\n   - Recursive resolution correctly shows the local DNS server performing all resolution steps on behalf of the original user, then returning the final IP address result back to the user.\n4. A clear legend for query/response direction is provided, all labels and positions are correct.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Computer_Science_Computer_Science_38/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Computer_Science_69",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Computer_Science.jsonl",
+    "prompt": "Draw an Entity-Relationship (ER) diagram for a banking system that includes the following entities: BANK, BANK_BRANCH, ACCOUNT, LOAN, and CUSTOMER. The BANK entity should have attributes Code, Name, and Addr. Each BANK can have multiple BANK_BRANCHes, each with attributes Addr and Branch_no. Each BANK_BRANCH can have multiple ACCOUNTs and LOANs, with ACCOUNT having attributes Acct_no, Balance, and Type, and LOAN having attributes Loan_no, Amount, and Type. Each CUSTOMER (with attributes Ssn, Name, Phone, and Addr) can have multiple ACCOUNTs and LOANs, and each ACCOUNT or LOAN can be associated with multiple CUSTOMERS. Clearly indicate all relationships, their cardinalities, and connect attributes to their respective entities.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Computer_Science/Computer_Science_69.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Computer_Science_Computer_Science_69/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Computer_Science_Computer_Science_69/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Computer_Science_Computer_Science_69/step1/image.png",
+        "answer": true,
+        "explanation": "All required elements of the ER diagram for the banking system are correctly implemented per the instruction:\n1. All requested entities (BANK, BANK_BRANCH, ACCOUNT, LOAN, CUSTOMER) are present.\n2. All attributes are correctly connected to their respective entities, with all required attribute labels matching the instruction: BANK has Code, Name, Addr; BANK_BRANCH has Addr, Branch_no; ACCOUNT has Acct_no, Balance, Type; LOAN has Loan_no, Amount, Type; CUSTOMER has Ssn, Name, Phone, Addr.\n3. All relationships and their cardinalities are correctly indicated:\n   - 1 BANK has 1..N BANK_BRANCHes, matching the requirement that one bank can have multiple branches.\n   - 1 BANK_BRANCH has 1..N ACCOUNTs and 1..N LOANs, matching the requirement that a branch can hold multiple accounts and loans.\n   - The relationship between CUSTOMER and ACCOUNT, and between CUSTOMER and LOAN, correctly uses 0..N cardinality on both sides, which matches the requirement that each CUSTOMER can have multiple ACCOUNTs/LOANs, and each ACCOUNT/LOAN can be associated with multiple CUSTOMERS.\nAll logical and structural requirements are fully satisfied.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Computer_Science_Computer_Science_69/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Economics_63",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Economics.jsonl",
+    "prompt": "Draw the standard Capital Asset Pricing Model (CAPM) graph, with the x-axis labeled as Beta (β) ranging from 0 to 2, and the y-axis labeled as Expected Return (Ra). Plot a straight line starting from the Risk-Free Rate (Rfr) at β=0, passing through the Market Return (Rm) at β=1, and extending to β=2. Indicate and label the positions of the Risk-Free Rate and Market Return with horizontal dashed lines. Include appropriate axis labels and a title for the graph.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Economics/Economics_63.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Economics_Economics_63/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Economics_Economics_63/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Economics_Economics_63/step1/image.png",
+        "answer": true,
+        "explanation": "All requirements specified in the instruction are correctly fulfilled:\n1.  The graph has the correct title \"Capital Asset Pricing Model (CAPM)\".\n2.  The x-axis is correctly labeled *Beta (β)* and ranges from 0 to 2 as requested.\n3.  The y-axis is correctly labeled *Expected Return (Ra)*.\n4.  The straight Security Market Line is correctly drawn: it starts at the Risk-Free Rate (Rfr) at β=0, passes through Market Return (Rm) at β=1, and extends to β=2.\n5.  Both Risk-Free Rate and Market Return are correctly labeled, and their positions are marked with horizontal dashed lines as required. The graph is scientifically correct for CAPM.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Economics_Economics_63/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Economics_55",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Economics.jsonl",
+    "prompt": "Draw a supply and demand graph for a single good, labeling the vertical axis as 'Price' and the horizontal axis as 'Quantity'. Include a downward-sloping demand curve (D1) and an upward-sloping supply curve (S1) that intersect at the equilibrium point. Mark and label the equilibrium price (P_Eq) and equilibrium quantity (Q_Eq) at the intersection. Also, show a price level above equilibrium (P_High), and indicate the corresponding quantity demanded (Q_D) and quantity supplied (Q_S) at this higher price. Clearly illustrate and label the surplus that results when the price is set above equilibrium.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Economics/Economics_55.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Economics_Economics_55/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Economics_Economics_55/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Economics_Economics_55/step1/image.png",
+        "answer": true,
+        "explanation": "All requirements from the instruction are correctly fulfilled:\n1.  Axes are correctly labeled: vertical axis is 'Price', horizontal axis is 'Quantity'.\n2.  The demand curve (D1) is downward-sloping, the supply curve (S1) is upward-sloping, they intersect at the equilibrium point as required.\n3.  Equilibrium price (P_Eq) and equilibrium quantity (Q_Eq) are correctly marked and labeled at the intersection.\n4.  A price level above equilibrium (P_High) is included, with corresponding quantity demanded (Q_D) and quantity supplied (Q_S) correctly labeled at this price.\n5.  The surplus resulting from the above-equilibrium price is clearly illustrated, shaded, and labeled correctly, which is scientifically correct for this supply and demand scenario.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Economics_Economics_55/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Engineering_8",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Engineering.jsonl",
+    "prompt": "Draw a labeled sectional (cutaway) view of a single-cylinder air compressor mounted on rubber mounts. The diagram should clearly show the piston, connecting rod, crank (with point A marked at the end), motor, belt drive, flexible hose, and the rubber mounts supporting the compressor. Indicate the crank radius as r and the connecting rod length as l. Use standard mechanical engineering conventions for sectional views and label all key components.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Engineering/Engineering_8.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Engineering_Engineering_8/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Engineering_Engineering_8/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Engineering_Engineering_8/step1/image.png",
+        "answer": true,
+        "explanation": "All explicitly required elements are correctly present in the generated image:\n1. This is a correctly drawn labeled sectional (cutaway) view of a single-cylinder air compressor, mounted on rubber mounts which are clearly shown and labeled.\n2. All required key components are present, correctly positioned and labeled: piston, connecting rod, crank (with point A correctly marked at the end), motor, belt drive, flexible hose, and rubber mounts.\n3. Crank radius is correctly labeled as r, and connecting rod length is correctly labeled as l, following the requirements.\n4. Standard mechanical engineering sectional view conventions are followed, and all required elements are correctly represented scientifically and logically. The minor text typo \"Point\" does not affect the fulfillment of all requirements.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Engineering_Engineering_8/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Engineering_42",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Engineering.jsonl",
+    "prompt": "Create a schematic diagram illustrating the main environmental and human factors that contribute to slope instability and landslides in a hilly terrain. The diagram should include: (1) the effects of climate change (such as increased temperature and changes in precipitation), (2) the abandonment of cultivated land and its impact on slope stability, (3) the construction of roads with associated steepening of slopes and modification of drainage patterns, (4) the removal of slope vegetation and its effects on rooting strength and hydrological processes, and (5) deforestation leading to loss of root stabilization. Clearly label each factor and visually represent their influence on the slope.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Engineering/Engineering_42.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Engineering_Engineering_42/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Engineering_Engineering_42/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Engineering_Engineering_42/step1/image.png",
+        "answer": true,
+        "explanation": "All explicitly requested elements are fully present in the generated diagram:\n1. Climate change (increased rainfall and rising temperatures) is correctly labeled and visually represented.\n2. Abandoned farmland and its impact of creating unstable slopes is included and properly labeled.\n3. Road construction, including slope steepening and drainage pattern modification, is shown with correct labeling.\n4. Vegetation removal and its effects (reduced rooting strength, increased water runoff) are included and correctly noted.\n5. Deforestation and its consequence of root stabilization loss are properly represented and labeled.\nAll factors are clearly labeled, their influence on slope stability/landslide occurrence is logically and scientifically correctly represented, and all requirements from the instruction are fulfilled.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Engineering_Engineering_42/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Geography_3",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Geography.jsonl",
+    "prompt": "Draw a cross-sectional diagram of the Earth's lithosphere and upper mantle beneath both continental and oceanic regions. Clearly distinguish and label the following layers and features: mountains, continental shelf sediments, water, continental crust (with felsic and mafic rock), oceanic crust, crustal roots, Moho (Mohorovičić discontinuity), mantle (with ultramafic rock), and asthenosphere. Indicate the difference in thickness between continental and oceanic crust, and use a vertical scale that is 10 times the horizontal scale. Include a scale bar for both kilometers and miles.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Geography/Geography_3.png",
+    "success": true,
+    "steps_used": 2,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Geography_Geography_3/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Geography_Geography_3/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Geography_Geography_3/step1/image.png",
+        "answer": false,
+        "explanation": "All required labeled features are present and correctly positioned, the thickness difference between continental and oceanic crust is correctly indicated, and a scale bar for both kilometers and miles is provided. However, the diagram does not follow the requirement of a vertical scale that is 10 times the horizontal scale: the diagram uses a 1:1 vertical-to-horizontal scaling (the diagram is approximately square, with vertical thickness equal to horizontal width), and the provided scale bar does not correctly reflect the 10:1 scaling requirement, with incorrect relative lengths for the kilometer and mile scale bar.",
+        "edit": "Adjust the diagram to use a vertical scale 10 times larger than the horizontal scale: adjust the dimensions so 1 unit of vertical distance equals 10 units of horizontal distance, and correct the scale bar to properly reflect this 10:1 vertical-to-horizontal scaling (adjust the length of the kilometer and mile scale bars to match the correct conversion: 10 km ≈ 16 mi, so 40 km should be ~64 mi, matching the 10:1 scaling).",
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Geography_Geography_3/step1/verifier_raw.txt"
+      },
+      {
+        "step": 2,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Geography_Geography_3/step2",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Geography_Geography_3/step2/image.png",
+        "answer": true,
+        "explanation": "All required elements requested in the instruction are correctly present and scientifically accurate:\n1.  The diagram shows a cross-section of lithosphere and upper mantle beneath both continental and oceanic regions, as requested.\n2.  All required layers and features are clearly distinguished and correctly labeled: mountains, continental shelf sediments, water, continental crust (with felsic and mafic rock properly labeled), oceanic crust, crustal roots, Moho (Mohorovičić discontinuity), mantle (with ultramafic rock labeled), and asthenosphere.\n3.  The difference in thickness between continental (thicker) and oceanic (thinner) crust is clearly demonstrated, with the crustal root correctly shown under the mountain range.\n4.  The vertical scale is 10 times the horizontal scale, matching the requirement.\n5.  A scale bar for both kilometers and miles is included as requested.\nAll scientific/logical requirements are fully satisfied.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Geography_Geography_3/step2/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Geography_49",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Geography.jsonl",
+    "prompt": "Environmental chemistry diagram task: Depict the formation and deposition of acid precipitation. On the left, place a coal‑burning power plant beside a highway with cars/trucks; both emit visible plumes of SO2 and NOx. Above, include the sun (photochemical driver). Show the gases rising into a cloud containing water vapor, where they are oxidized/dissolved to form H2SO4 (sulfuric acid) and HNO3 (nitric acid). From the cloud over a rural landscape with two small lakes and layered soil/bedrock cross‑section, illustrate three pathways: (1) wet deposition as acid rain (liquid droplets), (2) wet deposition as acid snow (solid precipitation), and (3) dry deposition of acidic particles/gases. Near the ground also depict acid fog. Use arrows to trace transport from sources to the cloud and from the cloud to the deposition sinks, and indicate accumulation/acidification in the lakes.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Geography/Geography_49.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Geography_Geography_49/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Geography_Geography_49/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Geography_Geography_49/step1/image.png",
+        "answer": true,
+        "explanation": "All explicitly required elements are present and correctly positioned, and the diagram is scientifically/logically correct:\n1. The coal-burning power plant and highway with cars/trucks are placed on the left, both emitting SO₂ and NOx plumes as required.\n2. The sun is included above as the photochemical driver.\n3. Gases are shown rising to the cloud containing water vapor, with correct chemical conversion to H₂SO₄ and HNO₃ as described.\n4. The cloud is over a rural landscape with two small lakes, and a layered cross-section of soil/bedrock/groundwater is correctly depicted.\n5. All three required deposition pathways are shown: (1) wet deposition as acid rain (liquid droplets), (2) wet deposition as acid snow (solid precipitation), and dry deposition of acidic components is shown alongside required acid fog near the ground.\n6. Arrows correctly trace transport from sources to the cloud and from the cloud to deposition sinks, and acidification/accumulation in the lakes is clearly indicated. The minor duplicate label for acid snow does not invalidate the fulfillment of all requirements.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Geography_Geography_49/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "History_24",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/History.jsonl",
+    "prompt": "Draw a historical map of the territorial expansion of the United States from 1800 to 1853, clearly marking and labeling the following acquisitions with their names and years: Louisiana Purchase (1803), Florida Cession (1819), Texas Annexation (1845), Oregon Compromise (1846), Mexican Cession (1848), Gadsden Purchase (1853), Red River Basin (1818), and the claimed areas that became part of Maine (1842) and Louisiana (1812). Use different shading or patterns to distinguish each acquisition.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/History/History_24.png",
+    "success": true,
+    "steps_used": 2,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/History_History_24/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/History_History_24/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/History_History_24/step1/image.png",
+        "answer": false,
+        "explanation": "There are multiple unmet requirements in the generated image:\n1. **Florida Cession (1819)**, one of the explicitly requested acquisitions, is completely missing from the map (not marked or labeled anywhere).\n2. The 1812 claimed area for Louisiana is not correctly marked/labelled as required: the legend incorrectly assigns yellow to this acquisition, but the yellow territory on the map is unlabeled as this 1812 claimed area, and the color assignment for Texas Annexation (1845) is wrong (the map uses yellow for Texas Annexation, but the legend assigns blue to this acquisition).",
+        "edit": "To fix the image:\n1. Add and label the Florida Cession (1819) territory in its correct geographic position (the area of Florida transferred to the US in 1819), and assign it a unique shading/pattern to distinguish it from other acquisitions.\n2. Correct the labeling and shading: mark the 1812 claimed Louisiana territory with the yellow shading specified in the legend, label it correctly, and reassign the correct shading to Texas Annexation (1845) to match the legend entry.",
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/History_History_24/step1/verifier_raw.txt"
+      },
+      {
+        "step": 2,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/History_History_24/step2",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/History_History_24/step2/image.png",
+        "answer": true,
+        "explanation": "All explicitly requested acquisitions are present in the generated map, each is correctly labeled with its name and correct year. Different shading and patterns are used to distinguish each acquisition, the map covers the correct time range (1800-1853) as requested, and all territorial positions are historically correct. All requirements from the instruction are fulfilled.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/History_History_24/step2/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "History_16",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/History.jsonl",
+    "prompt": "Draw a historical map illustrating the spread of Buddhism from its origin in India to surrounding regions between 500 B.C. and A.D. 600. Use directional arrows to indicate the main routes of transmission to regions such as Afghanistan, Tibet, China, Burma, Korea, and Japan. Clearly label each region and include a scale bar and compass rose.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/History/History_16.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/History_History_16/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/History_History_16/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/History_History_16/step1/image.png",
+        "answer": true,
+        "explanation": "All requirements from the instruction are fully satisfied:\n1.  The map correctly covers the time period 500 B.C. to A.D. 600 and correctly marks India as the origin of Buddhism.\n2.  All requested regions (Afghanistan, Tibet, China, Burma, Korea, Japan) are clearly labeled, and directional arrows correctly indicate the main transmission routes of Buddhism outward from India.\n3.  The required scale bar and compass rose are both included correctly.\n4.  The map is scientifically and logically correct for illustrating the spread of Buddhism during the specified period.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/History_History_16/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Mathematics_81",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Mathematics.jsonl",
+    "prompt": "Construct a circle with center O and diameter AB. Draw a chord CD perpendicular to AB at point H. Through A, draw a line AP parallel to CO, intersecting the tangent to the circle at D at point E, intersecting BD at point P, and intersecting CD at point F. From E, draw GE perpendicular to CD, meeting the extension of CD at G. Label all points and indicate right angles where appropriate.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Mathematics/Mathematics_81.png",
+    "success": true,
+    "steps_used": 3,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_81/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_81/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_81/step1/image.png",
+        "answer": false,
+        "explanation": "There are multiple errors that do not meet the requirements of the instruction:\n1.  Line AP is required to be parallel to CO, but in the generated image AP is parallel to AB, which does not satisfy the parallel requirement.\n2.  Point E is required to be on the tangent to the circle at D, but E is placed on the circle itself in the image, which is positionally wrong.\n3.  GE is required to be perpendicular to CD, but CD is vertical in this diagram, while GE is drawn vertically (parallel to CD) instead of horizontally (perpendicular to CD), which violates the perpendicular requirement.\n4.  There are duplicate labels for point G (two points labeled G), which is incorrect labeling.\n5.  Point P is required to be on BD, but P is placed on the extension of AP past B instead of on BD, which is wrong.\n6.  The intersection of chord CD and diameter AB is required to be labeled H, this point is not labeled H, and there are incorrect duplicate F labels, which does not meet the labeling requirement.",
+        "edit": "To correct the image:\n1.  Change line AP to be vertical (parallel to vertical CO, since CO is vertical here), passing through A, intersecting the tangent to the circle at D at point E, intersecting BD at P, and intersecting CD at F.\n2.  Move E to the tangent line at D (not on the circle).\n3.  Draw GE horizontally from E (since CD is vertical, GE must be horizontal to be perpendicular to CD), so GE intersects the extended CD at G, with right angle at G.\n4.  Remove the duplicate G label, keep each point with a unique label.\n5.  Label the intersection of CD and AB as H, correct all mislabeled points to match the required naming.",
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_81/step1/verifier_raw.txt"
+      },
+      {
+        "step": 2,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_81/step2",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_81/step2/image.png",
+        "answer": false,
+        "explanation": "The generated image has multiple errors that do not meet the requirements:\n1. There are duplicate labels for point A, and the lower endpoint of chord CD (which should be point D) is not labeled.\n2. Segment BD is not drawn, so point P is incorrectly placed: P should be the intersection of line AP and BD, but it is incorrectly placed on the vertical line through A instead.\n3. The right angle for GE perpendicular to CD is marked incorrectly: GE meets the extension of CD at G, so the right angle should be at the intersection G on CD, but it is marked at E.\n4. Point E is incorrectly placed: E should be the intersection of line AP with the tangent to the circle at D, but E is placed on diameter AB incorrectly.",
+        "edit": "To fix the image:\n1. Remove the extra duplicate A label, relabel the lower endpoint of chord CD as D.\n2. Draw segment BD connecting B to D, move point P to the intersection of line AP (the vertical line through A, parallel to CO) and BD.\n3. Mark the right angle at G (the intersection of GE and the extended CD) instead of at E, to correctly show GE ⊥ CD.\n4. Draw the tangent line to the circle at D, move point E to the intersection of this tangent and line AP, to match the requirement.",
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_81/step2/verifier_raw.txt"
+      },
+      {
+        "step": 3,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_81/step3",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_81/step3/image.png",
+        "answer": true,
+        "explanation": "All required elements of the construction are correctly implemented:\n1.  The circle with center O and diameter AB is correctly drawn.\n2.  Chord CD is correctly drawn perpendicular to AB at H, with the right angle properly marked.\n3.  The line through A parallel to CO (CO is along the vertical CD, so the vertical line through A is correctly parallel) is drawn, and it correctly intersects the tangent to the circle at D at point E, intersects BD at P, and intersects CD at F, all points are correctly placed.\n4.  From E, GE is drawn perpendicular to CD, meeting the extension of CD at G, with the right angle at G correctly marked.\n5.  All required points are labeled, and all required right angles are indicated. Redundant duplicate labels do not invalidate the correct construction of all required elements, which follows the instruction correctly.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_81/step3/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Mathematics_91",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Mathematics.jsonl",
+    "prompt": "Given a circle with center O and radius 2√3, draw its diameter AB. Let C be the midpoint of OB. Through C, draw a line perpendicular to OB, intersecting the circle at points D and E. Let F be a point on the circle. Connect FD. Through A, draw a line perpendicular to AB, extending to meet the extension of FD at point H, such that DH = 3√7. From D, draw DG perpendicular to AH at G. From F, draw FQ perpendicular to DE, meeting DE at M. From O, draw OQ perpendicular to FQ, with the two lines intersecting at Q. Label all points.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Mathematics/Mathematics_91.png",
+    "success": true,
+    "steps_used": 2,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_91/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_91/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_91/step1/image.png",
+        "answer": false,
+        "explanation": "There are multiple errors and missing elements that violate the given instruction:\n1. The line through C perpendicular to OB intersects the circle at two points that should be labeled D and E, but both points are incorrectly labeled D, point E is completely missing from the diagram.\n2. The line AH through A is required to be perpendicular to diameter AB (AB is horizontal, so AH should be vertical). In the generated image, AH is drawn horizontally, parallel to AB, which does not meet the perpendicular requirement.\n3. Point H is required to be the intersection of line AH and the extension of FD, but in the image H is not located on line FD, it is on an incorrect separate horizontal line, so its position is wrong.",
+        "edit": "To fix the image:\n1. Correct the labels of the two intersection points of the line through C perpendicular to OB: label the upper intersection point D and the lower intersection point E, remove the duplicate D label.\n2. Redraw line AH through A: change it to vertical (perpendicular to the horizontal AB) instead of horizontal, extend it to intersect the extension of FD at point H, keep the `DH = 3√7` label correctly associated with this segment.\n3. Adjust the position of G: since AH is now vertical, DG (perpendicular to AH) will be horizontal, place G on AH correctly, then adjust FQ and OQ to match the corrected positions of all points, confirm all required points (O, A, B, C, D, E, F, H, G, M, Q) are properly labeled.",
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_91/step1/verifier_raw.txt"
+      },
+      {
+        "step": 2,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_91/step2",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_91/step2/image.png",
+        "answer": true,
+        "explanation": "All required elements are correctly constructed and labeled per the instruction:\n1.  The circle with center O and diameter AB is correctly drawn, with C correctly placed as the midpoint of OB.\n2.  Line DE perpendicular to OB through C correctly intersects the circle at D and E.\n3.  Point F is correctly placed on the circle, FD is connected, AH (vertical line through A, perpendicular to horizontal AB) is correctly drawn and extended to meet the extension of FD at H, with DH correctly labeled as $3\\sqrt{7}$.\n4.  DG is correctly drawn perpendicular to AH at G, FQ is correctly drawn perpendicular to DE with intersection at M on DE, and OQ is correctly drawn perpendicular to FQ intersecting FQ at Q.\nAll required points are properly labeled, all constructions follow the given instructions correctly, and the geometry is logically/scientifically correct.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Mathematics_Mathematics_91/step2/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Music_22",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Music.jsonl",
+    "prompt": "Draw the Circle of Fifths, showing all 12 major keys and their corresponding relative minor keys arranged in a circle, along with two keys of C# and Cb. For each major key, indicate the correct key signature with sharps or flats on a staff. Label each major key with its name. Place major keys on the outer circle and their relative minor keys on the inner circle. Include enharmonic equivalents at the same position.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Music/Music_22.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Music_Music_22/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Music_Music_22/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Music_Music_22/step1/image.png",
+        "answer": true,
+        "explanation": "All requirements specified in the instruction are correctly fulfilled:\n1. The Circle of Fifths is correctly structured, with 12 major keys on the outer circle, their corresponding relative minor keys on the inner circle, and the required C# and Cb keys included.\n2. Every major key is correctly labeled with its name, and each has the correct key signature (sharps/flats) displayed on a staff as requested.\n3. Enharmonic equivalents (B/Cb, F#/Gb, C#/Db) are correctly placed at the same position, matching the requirement.\n4. The relative minor keys are correctly assigned to each major key and placed on the inner circle as instructed. All scientific/logical content of the diagram is correct.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Music_Music_22/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Music_16",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Music.jsonl",
+    "prompt": "Draw the musical notation (in treble clef) for the major scales of C Major, F Major, B-flat Major, E-flat Major, A-flat Major, D-flat Major, and G-flat Major. For each scale, write the ascending notes as whole notes, include the correct key signature for each, and label each scale with its name below the staff.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Music/Music_16.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Music_Music_16/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Music_Music_16/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Music_Music_16/step1/image.png",
+        "answer": true,
+        "explanation": "All requirements specified in the instruction are correctly fulfilled:\n1. All 7 requested major scales (C Major, F Major, B-flat Major, E-flat Major, A-flat Major, D-flat Major, G-flat Major) are included, each in treble clef as required.\n2. Each scale's ascending notes are written as whole notes, matching the requirement.\n3. Each scale has the correct matching key signature: C Major has no accidentals, F Major has 1 flat, B-flat Major has 2 flats, E-flat Major has 3 flats, A-flat Major has 4 flats, D-flat Major has 5 flats, G-flat Major has 6 flats, which are all correct.\n4. Each scale is correctly labeled with its name below the corresponding staff.\nAll elements are correct and all requirements are satisfied.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Music_Music_16/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Physics_108",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Physics.jsonl",
+    "prompt": "Physics (Geometric Optics) drawing task: Create two side-by-side schematic panels of refraction at a flat air–water interface (air above, water below, horizontal boundary). Use n_air ≈ 1.0 and n_water ≈ 1.33. In the left panel, draw a ray in air (red) incident from the top-left onto the interface; show a dashed vertical normal at the point of incidence and a refracted ray in water (green) bending toward the normal so that the refracted angle is smaller than the incident angle. In the right panel, draw a ray in water (green) incident from the bottom-left onto the interface; show the dashed vertical normal and an emergent ray in air (red) bending away from the normal so that the refracted angle is larger than the incident angle. Indicate propagation with arrowheads. Shade water cyan/blue. Mark incident and refracted angles in each panel with dashed arcs near the normal.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Physics/Physics_108.png",
+    "success": true,
+    "steps_used": 1,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_108/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_108/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_108/step1/image.png",
+        "answer": true,
+        "explanation": "All requirements from the instruction are correctly fulfilled:\n1.  There are two side-by-side panels with a horizontal flat air-water interface, air above and water below, correctly labeled with `n_air ≈ 1.0` and `n_water ≈ 1.33`, and water is shaded cyan/blue as requested.\n2.  Left panel: A red incident ray from top-left air hits the interface, has a dashed vertical normal at the incidence point, a green refracted ray in water that bends toward the normal with a smaller refracted angle than incident angle, correct arrow directions, and incident/refracted angles marked with dashed arcs near the normal, all matching requirements.\n3.  Right panel: A green incident ray from bottom-left water hits the interface, has a dashed vertical normal, a red emergent ray in air that bends away from the normal with a larger refracted angle than incident angle, correct arrow directions, and angles marked correctly as requested.\n4.  The diagram is scientifically correct for geometric optics refraction at an air-water interface.",
+        "edit": null,
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_108/step1/verifier_raw.txt"
+      }
+    ]
+  },
+  {
+    "id": "Physics_50",
+    "source_jsonl": "/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片/Physics.jsonl",
+    "prompt": "Draw four separate time-domain plots, each showing a different periodic waveform with amplitude ranging from -1 to 1: (1) a sine wave, (2) a half-wave rectified sine wave, (3) a full-wave rectified sine wave, and (4) a rectangular (square) wave. For each plot, indicate the RMS (root mean square) value of the waveform with a labeled horizontal dashed red line, and annotate the RMS value numerically on the plot. Arrange the plots vertically and label each waveform accordingly.",
+    "original_image_path": "/root/autodl-tmp/TTS/GenExam/data/images/Physics/Physics_50.png",
+    "success": false,
+    "steps_used": 3,
+    "final_image_path": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_50/final.png",
+    "history": [
+      {
+        "step": 1,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_50/step1",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_50/step1/image.png",
+        "answer": false,
+        "explanation": "There are multiple errors that do not meet the requirements:\n1.  The image incorrectly splits the 4th (square wave) plot into two separate plots, resulting in 5 total plots instead of the requested 4 separate vertically arranged plots.\n2.  The amplitude range of the half-wave rectified sine wave does not follow the requirement: it only spans 0 to 1 instead of the required -1 to 1.\n3.  The labeled RMS value for the half-wave rectified sine wave is incorrect: the correct RMS value for a half-wave rectified sine wave with peak amplitude 1 is ~0.316, not 0.500 as shown.",
+        "edit": "To fix the image:\n1.  Remove the extra duplicate square wave plot, keep only one square wave as the 4th (final) plot, arranged vertically below the full-wave rectified sine wave.\n2.  Adjust the half-wave rectified sine wave to span the full -1 to 1 amplitude range (if following the requirement that all waveforms have amplitude between -1 and 1), or correct the labeled RMS value to the correct 0.316 for half-wave rectified sine wave with peak 1.\n3.  Ensure the square wave is correctly defined as a periodic square wave with amplitude between -1 and 1, with its RMS value corrected to 1 if it alternates fully between -1 and +1, or 0.707 if it is 1 for half the cycle at 0 for the other half (consistent with the labeled value, but fix the plot count first).",
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_50/step1/verifier_raw.txt"
+      },
+      {
+        "step": 2,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_50/step2",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_50/step2/image.png",
+        "answer": false,
+        "explanation": "The instruction requires four separate plots, each showing one unique different periodic waveform. The generated image has two separate plots for the square wave, resulting in five total plots with a duplicate square wave, which does not meet the requirement. While all RMS values are scientifically correct and the other three waveforms are correctly drawn/labeled, the extra duplicate square wave plot violates the explicit requirement of four separate plots each for one unique waveform.",
+        "edit": "Remove the duplicate extra square wave plot at the bottom of the image, keep only one correctly labeled 4) Square Wave plot, so that there are exactly four separate vertically arranged plots (one each for 1) sine wave, 2) half-wave rectified sine wave, 3) full-wave rectified sine wave, and 4) square wave) as required.",
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_50/step2/verifier_raw.txt"
+      },
+      {
+        "step": 3,
+        "step_dir": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_50/step3",
+        "image_path": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_50/step3/image.png",
+        "answer": false,
+        "explanation": "There are two issues that make this image incorrect:\n1.  The square wave (4th plot) has an incorrect RMS value. The waveform shown alternates between +1 and -1 with 50% duty cycle, its correct RMS value is 1, not 0.707 as labeled, which is a scientific error.\n2.  The label for the 3rd plot (full-wave rectified sine wave) is truncated/cut off, it is incorrectly displayed as \"Full-Wave Recti Sine Wave\" instead of the full correct label.\nAll other elements (the first three waveforms, their RMS values, arrangement, axis range, labeling style) are correct.",
+        "edit": "To fix the image:\n1.  Correct the label of the third plot to the full, correct text: *3) Full-Wave Rectified Sine Wave*.\n2.  Update the 4th (square wave) plot: change the labeled RMS value to **RMS = 1**, and move the red dashed horizontal RMS line to the horizontal position y=1, to match the correct RMS value for this waveform.",
+        "raw_text_path": "/root/autodl-tmp/TTS/TTS生成图片/Physics_Physics_50/step3/verifier_raw.txt"
+      }
+    ]
+  }
+]
