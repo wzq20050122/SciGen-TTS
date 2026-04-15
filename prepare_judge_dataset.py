@@ -46,6 +46,31 @@ def first_existing_path(*candidates: Optional[str]) -> Optional[Path]:
     return None
 
 
+def list_step_images(sample_dir: Path) -> Dict[int, Path]:
+    step_images: Dict[int, Path] = {}
+    for step_dir in sample_dir.glob("step*"):
+        if not step_dir.is_dir():
+            continue
+        name = step_dir.name
+        if not name.startswith("step"):
+            continue
+        try:
+            step_num = int(name[4:])
+        except Exception:
+            continue
+
+        img = first_existing_path(
+            step_dir.joinpath("image.png").as_posix(),
+            step_dir.joinpath("image.jpg").as_posix(),
+            step_dir.joinpath("image.jpeg").as_posix(),
+            step_dir.joinpath("image.webp").as_posix(),
+        )
+        if img:
+            step_images[step_num] = img
+
+    return step_images
+
+
 def _safe_name(text: str) -> str:
     import re
 
@@ -81,11 +106,12 @@ def main() -> None:
 
     ann_dir = output_dir / "annotations"
     gt_img_dir = output_dir / "images"
-    step1_dir = output_dir / "candidates" / "step1"
-    final_dir = output_dir / "candidates" / "final"
+    candidates_dir = output_dir / "candidates"
+    step1_dir = candidates_dir / "step1"
+    final_dir = candidates_dir / "final"
     meta_dir = output_dir / "meta"
 
-    for d in [ann_dir, gt_img_dir, step1_dir, final_dir, meta_dir]:
+    for d in [ann_dir, gt_img_dir, candidates_dir, step1_dir, final_dir, meta_dir]:
         ensure_dir(d)
 
     all_rows: List[Dict[str, Any]] = []
@@ -112,12 +138,8 @@ def main() -> None:
             source_record.get("image_path"),
             final_result.get("original_image_path"),
         )
-        step1_src = first_existing_path(
-            sample_dir.joinpath("step1", "image.png").as_posix(),
-            sample_dir.joinpath("step1", "image.jpg").as_posix(),
-            sample_dir.joinpath("step1", "image.jpeg").as_posix(),
-            sample_dir.joinpath("step1", "image.webp").as_posix(),
-        )
+        step_images = list_step_images(sample_dir)
+        step1_src = step_images.get(1)
         final_src = first_existing_path(
             final_result.get("final_image_path"),
             sample_dir.joinpath("final.png").as_posix(),
@@ -153,6 +175,15 @@ def main() -> None:
         row["image_path"] = str(gt_dst.resolve()) if gt_ok else None
         row["step1_image_path"] = str(step1_dst.resolve()) if step1_ok else None
         row["final_image_path"] = str(final_dst.resolve()) if final_ok else None
+
+        # Also expose every available intermediate step image for per-step evaluation.
+        step_image_paths: Dict[str, str] = {}
+        for step_num, src in sorted(step_images.items()):
+            dst = candidates_dir / f"step{step_num}" / f"{subject}/{rid}.png"
+            ok = copy_if_exists(src, dst)
+            if ok:
+                step_image_paths[f"step{step_num}"] = str(dst.resolve())
+        row["step_image_paths"] = step_image_paths
 
         row["steps_used"] = final_result.get("steps_used")
         row["tts_success"] = final_result.get("success")

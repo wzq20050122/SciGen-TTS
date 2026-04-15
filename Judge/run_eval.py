@@ -1,5 +1,7 @@
 import json
 import os
+import re
+import hashlib
 import base64
 import requests
 from PIL import Image
@@ -9,6 +11,8 @@ import argparse
 from datetime import datetime
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 from eval_prompt import prompt_for_eval
 
@@ -19,6 +23,15 @@ DEFAULT_BASE_URL = os.environ.get("DMX_BASE_URL", "https://www.dmxapi.cn/v1")
 DEFAULT_MODEL_NAME = "gemini-3-flash-preview"
 
 
+def write_json_atomic(path: Path, data):
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    tmp_path.replace(path)
+
+
 def _dmx_headers(api_key, json_request=False):
     headers = {"Authorization": api_key}
     if json_request:
@@ -26,23 +39,34 @@ def _dmx_headers(api_key, json_request=False):
     return headers
 
 
-def _resolve_gen_image_path(data, img_save_dir):
+def _resolve_gen_image_path(data, img_save_dir, step_key=None):
     """
     Resolve generated image path with priority:
-    1) annotation field: step1_image_path/final_image_path (if absolute and exists)
-    2) annotation field relative path under img_save_dir
+    1) explicit step_key mapping from annotation: step_image_paths[stepN]
+    2) legacy fields: step1_image_path/final_image_path
     3) fallback old style: img_save_dir/{id}.png
     4) fallback subject style: img_save_dir/{subject}/{id}.png
     """
     mode_hint = os.path.basename(os.path.normpath(img_save_dir)).lower()
+    chosen_step_key = (step_key or mode_hint or "").lower()
 
     candidates = []
-    if "step1" in mode_hint and data.get("step1_image_path"):
+
+    step_image_paths = data.get("step_image_paths")
+    if isinstance(step_image_paths, dict):
+        # explicit requested step key
+        if chosen_step_key in step_image_paths:
+            candidates.append(step_image_paths.get(chosen_step_key))
+        # fallback by mode hint if it looks like stepN
+        if mode_hint in step_image_paths:
+            candidates.append(step_image_paths.get(mode_hint))
+
+    if chosen_step_key == "step1" and data.get("step1_image_path"):
         candidates.append(data.get("step1_image_path"))
-    if "final" in mode_hint and data.get("final_image_path"):
+    if chosen_step_key == "final" and data.get("final_image_path"):
         candidates.append(data.get("final_image_path"))
 
-    # If mode hint is unclear, still try both fields.
+    # If step key is unclear, still try common fields.
     if data.get("step1_image_path"):
         candidates.append(data.get("step1_image_path"))
     if data.get("final_image_path"):
@@ -86,6 +110,142 @@ def _safe_name(text: str) -> str:
 
 def _build_run_tag(gen_model: str, edit_model: str, run_date: str) -> str:
     return _safe_name(f"{gen_model}&{edit_model}_{run_date}")
+
+
+def _list_available_step_keys(all_data):
+    steps = set()
+    for data in all_data:
+        mapping = data.get("step_image_paths")
+        if isinstance(mapping, dict):
+            for k in mapping.keys():
+                if isinstance(k, str) and re.fullmatch(r"step\d+", k):
+                    steps.add(k)
+    return sorted(steps, key=lambda x: int(x[4:]))
+
+
+def _derive_step_eval_dir(eval_save_dir: str, step_key: str) -> str:
+    base = eval_save_dir.rstrip("/")
+    leaf = os.path.basename(base)
+    if re.fullmatch(r"eval_results_step\d+", leaf):
+        return os.path.join(os.path.dirname(base), f"eval_results_{step_key}")
+    return base
+
+
+def _resolve_reuse_from_previous_step_path(data, eval_save_dir: str, step_key: str):
+    """
+    Reuse rule:
+    - target is step2/step3/... (not step1)
+    - if the target step image does not exist, reuse the nearest previous available step eval json
+      by searching step{N-1}, step{N-2}, ... down to step1.
+    """
+    if not isinstance(step_key, str) or not re.fullmatch(r"step\d+", step_key):
+        return None
+
+    try:
+        target_step_num = int(step_key[4:])
+    except Exception:
+        return None
+    if target_step_num <= 1:
+        return None
+
+    mapping = data.get("step_image_paths")
+    if isinstance(mapping, dict) and mapping.get(step_key):
+        return None
+
+    for prev_step_num in range(target_step_num - 1, 0, -1):
+        prev_step_key = f"step{prev_step_num}"
+        if isinstance(mapping, dict) and not mapping.get(prev_step_key):
+            continue
+
+        prev_eval_dir = _derive_step_eval_dir(eval_save_dir, prev_step_key)
+        prev_json = os.path.join(prev_eval_dir, f"{data['id']}.json")
+        if os.path.exists(prev_json):
+            return prev_json
+
+    return None
+
+
+def _build_reused_eval_result(reuse_json_path: str, data, gen_img_save_path: str, gt_img_path: str):
+    eval_result = json.loads(open(reuse_json_path, "r", encoding="utf-8").read())
+    eval_result.update(data)
+    eval_result["gen_img_path"] = gen_img_save_path
+    eval_result["gt_img_path"] = gt_img_path
+    eval_result["reused_from"] = reuse_json_path
+    if "image_path" in eval_result:
+        del eval_result["image_path"]
+    return eval_result
+
+
+def _run_eval_once(
+    all_data,
+    img_save_dir,
+    eval_save_dir,
+    data_dir,
+    inference_function,
+    sampled_ids,
+    api_key,
+    base_url,
+    model_name,
+    step_key,
+    max_workers,
+    dedup_by_hash,
+):
+    if dedup_by_hash:
+        # Dedup requires a shared hash cache; run single-process for determinism.
+        inference_and_eval_dedup(
+            all_data=all_data,
+            img_save_dir=img_save_dir,
+            eval_save_dir=eval_save_dir,
+            data_dir=data_dir,
+            inference_function=inference_function,
+            sampled_ids=sampled_ids,
+            api_key=api_key,
+            base_url=base_url,
+            model_name=model_name,
+            step_key=step_key,
+            max_workers=max_workers,
+        )
+        return
+
+    if max_workers > 0:
+        print(f"Evaluating {step_key} with {max_workers} workers ...")
+        args_list = [
+            (
+                data,
+                img_save_dir,
+                eval_save_dir,
+                data_dir,
+                inference_function,
+                sampled_ids,
+                api_key,
+                base_url,
+                model_name,
+                step_key,
+            )
+            for data in all_data
+        ]
+
+        process_map(
+            _inference_and_eval_single,
+            args_list,
+            max_workers=max_workers,
+            desc=f"Evaluating {step_key}",
+        )
+    else:
+        print(f"Evaluating {step_key} without multiprocessing ...")
+        for data in tqdm(all_data):
+            inference_and_eval_single(
+                data,
+                img_save_dir,
+                eval_save_dir,
+                data_dir,
+                inference_function,
+                sampled_ids,
+                api_key,
+                base_url,
+                model_name,
+                step_key,
+            )
 
 
 def encode_image(image_path, target_size=1024, fmt="JPEG"):
@@ -248,9 +408,10 @@ def inference_and_eval_single(
     api_key,
     base_url,
     model_name,
+    step_key=None,
 ):
     json_save_path = os.path.join(eval_save_dir, f"{data['id']}.json")
-    gen_img_save_path = _resolve_gen_image_path(data, img_save_dir)
+    gen_img_save_path = _resolve_gen_image_path(data, img_save_dir, step_key=step_key)
 
     if sampled_ids is not None and data["id"] not in sampled_ids:
         return
@@ -271,25 +432,247 @@ def inference_and_eval_single(
 
     gt_img_path = _resolve_gt_image_path(data, data_dir)
 
-    eval_result = eval_single(
-        gen_img_path=gen_img_save_path,
-        gt_img_path=gt_img_path,
-        t2i_prompt=data["prompt"],
-        scoring_points=[item["question"] for item in data["scoring_points"]],
-        api_key=api_key,
-        base_url=base_url,
-        model_name=model_name,
-    )
+    reuse_json_path = _resolve_reuse_from_previous_step_path(data, eval_save_dir, step_key or "")
+    if reuse_json_path:
+        eval_result = _build_reused_eval_result(
+            reuse_json_path=reuse_json_path,
+            data=data,
+            gen_img_save_path=gen_img_save_path,
+            gt_img_path=gt_img_path,
+        )
+    else:
+        eval_result = eval_single(
+            gen_img_path=gen_img_save_path,
+            gt_img_path=gt_img_path,
+            t2i_prompt=data["prompt"],
+            scoring_points=[item["question"] for item in data["scoring_points"]],
+            api_key=api_key,
+            base_url=base_url,
+            model_name=model_name,
+        )
 
-    eval_result.update(data)
-    eval_result["gen_img_path"] = gen_img_save_path
-    eval_result["gt_img_path"] = gt_img_path
-    del eval_result["image_path"]
+        eval_result.update(data)
+        eval_result["gen_img_path"] = gen_img_save_path
+        eval_result["gt_img_path"] = gt_img_path
+        del eval_result["image_path"]
 
     os.makedirs(os.path.dirname(json_save_path), exist_ok=True)
-    with open(json_save_path, "w", encoding="utf-8") as f:
-        json.dump(eval_result, f, indent=4, ensure_ascii=False)
+    write_json_atomic(Path(json_save_path), eval_result)
     print(f"Saved eval results to {json_save_path}")
+
+
+def _file_sha256(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(1024 * 1024)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def inference_and_eval_dedup(
+    all_data,
+    img_save_dir,
+    eval_save_dir,
+    data_dir,
+    inference_function,
+    sampled_ids,
+    api_key,
+    base_url,
+    model_name,
+    step_key=None,
+    max_workers=8,
+):
+    """
+    Two-stage dedup pipeline:
+    1) parallel hash scan and grouping
+    2) evaluate one canonical sample per hash, then fan out results to all members
+
+    Also supports step-level reuse from step1 for samples that did not generate later-step images.
+    """
+    os.makedirs(eval_save_dir, exist_ok=True)
+
+    hash_cache_path = os.path.join(eval_save_dir, "_hash_cache.json")
+    if os.path.exists(hash_cache_path):
+        try:
+            with open(hash_cache_path, "r", encoding="utf-8") as f:
+                hash_cache = json.load(f)
+        except Exception:
+            hash_cache = {}
+    else:
+        hash_cache = {}
+
+    # hash -> canonical result json path
+    hash_to_result = {
+        v.get("image_hash"): k
+        for k, v in hash_cache.items()
+        if isinstance(v, dict) and v.get("image_hash") and isinstance(k, str)
+    }
+
+    candidates = []
+    for data in all_data:
+        rid = data["id"]
+        if sampled_ids is not None and rid not in sampled_ids:
+            continue
+
+        json_save_path = os.path.join(eval_save_dir, f"{rid}.json")
+        if os.path.exists(json_save_path):
+            continue
+
+        gen_img_save_path = _resolve_gen_image_path(data, img_save_dir, step_key=step_key)
+        if not os.path.exists(gen_img_save_path):
+            os.makedirs(os.path.dirname(gen_img_save_path), exist_ok=True)
+            assert inference_function is not None, (
+                f"Image {rid} has not been generated and inference function is not set"
+            )
+            inference_function(text_prompt=data["prompt"], save_path=gen_img_save_path)
+
+        gt_img_path = _resolve_gt_image_path(data, data_dir)
+        candidates.append(
+            {
+                "data": data,
+                "id": rid,
+                "json_save_path": json_save_path,
+                "gen_img_save_path": gen_img_save_path,
+                "gt_img_path": gt_img_path,
+            }
+        )
+
+    if not candidates:
+        write_json_atomic(Path(hash_cache_path), hash_cache)
+        return
+
+    # Stage 0: fast path reuse from step1 (no hashing/VLM needed)
+    pending = []
+    for item in candidates:
+        data = item["data"]
+        reuse_json_path = _resolve_reuse_from_previous_step_path(data, eval_save_dir, step_key or "")
+        if reuse_json_path:
+            eval_result = _build_reused_eval_result(
+                reuse_json_path=reuse_json_path,
+                data=data,
+                gen_img_save_path=item["gen_img_save_path"],
+                gt_img_path=item["gt_img_path"],
+            )
+            if not eval_result.get("image_hash"):
+                eval_result["image_hash"] = _file_sha256(item["gen_img_save_path"])
+
+            write_json_atomic(Path(item["json_save_path"]), eval_result)
+
+            hash_cache[item["json_save_path"]] = {
+                "id": item["id"],
+                "image_hash": eval_result.get("image_hash"),
+            }
+            if eval_result.get("image_hash"):
+                hash_to_result[eval_result["image_hash"]] = item["json_save_path"]
+        else:
+            pending.append(item)
+
+    if not pending:
+        write_json_atomic(Path(hash_cache_path), hash_cache)
+        return
+
+    # Stage 1: parallel hash computation
+    workers = max(1, int(max_workers or 1))
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(_file_sha256, item["gen_img_save_path"]): idx
+            for idx, item in enumerate(pending)
+        }
+        for fut in tqdm(as_completed(futures), total=len(futures), desc=f"Hashing {step_key or 'unknown'}"):
+            idx = futures[fut]
+            pending[idx]["image_hash"] = fut.result()
+
+    # Stage 2: group by hash
+    groups = {}
+    for item in pending:
+        h = item["image_hash"]
+        groups.setdefault(h, []).append(item)
+
+    # Stage 3: evaluate one canonical sample per hash (or reuse cached canonical)
+    # VLM API calls are executed concurrently for cache-miss hash groups.
+    canonical_by_hash = {}
+    to_eval = []
+
+    for h, items in groups.items():
+        canonical_path = hash_to_result.get(h)
+        if canonical_path and os.path.exists(canonical_path):
+            canonical_eval = json.loads(open(canonical_path, "r", encoding="utf-8").read())
+            canonical_by_hash[h] = {
+                "eval": canonical_eval,
+                "canonical_path": canonical_path,
+                "rep_json_save_path": items[0]["json_save_path"],
+            }
+        else:
+            to_eval.append((h, items))
+
+    if to_eval:
+        with ThreadPoolExecutor(max_workers=max(1, min(workers, len(to_eval)))) as executor:
+            futures = {}
+            for h, items in to_eval:
+                rep = items[0]
+                rep_data = rep["data"]
+                fut = executor.submit(
+                    eval_single,
+                    gen_img_path=rep["gen_img_save_path"],
+                    gt_img_path=rep["gt_img_path"],
+                    t2i_prompt=rep_data["prompt"],
+                    scoring_points=[item["question"] for item in rep_data["scoring_points"]],
+                    api_key=api_key,
+                    base_url=base_url,
+                    model_name=model_name,
+                )
+                futures[fut] = (h, rep)
+
+            for fut in tqdm(as_completed(futures), total=len(futures), desc=f"Evaluating {step_key or 'unknown'} (dedup)"):
+                h, rep = futures[fut]
+                rep_data = rep["data"]
+                canonical_eval = fut.result()
+                canonical_eval.update(rep_data)
+                canonical_eval["gen_img_path"] = rep["gen_img_save_path"]
+                canonical_eval["gt_img_path"] = rep["gt_img_path"]
+                canonical_eval["image_hash"] = h
+                if "image_path" in canonical_eval:
+                    del canonical_eval["image_path"]
+
+                canonical_by_hash[h] = {
+                    "eval": canonical_eval,
+                    "canonical_path": None,
+                    "rep_json_save_path": rep["json_save_path"],
+                }
+
+    # Fan out canonical result to all samples in each hash group
+    for h, items in groups.items():
+        canonical_entry = canonical_by_hash[h]
+        canonical_eval = canonical_entry["eval"]
+        canonical_path = canonical_entry["canonical_path"]
+        rep_json_save_path = canonical_entry["rep_json_save_path"]
+
+        for item in items:
+            eval_result = dict(canonical_eval)
+            eval_result.update(item["data"])
+            eval_result["gen_img_path"] = item["gen_img_save_path"]
+            eval_result["gt_img_path"] = item["gt_img_path"]
+            eval_result["image_hash"] = h
+
+            if canonical_path and os.path.exists(canonical_path):
+                eval_result["reused_from"] = canonical_path
+            elif item["json_save_path"] != rep_json_save_path:
+                eval_result["reused_from"] = rep_json_save_path
+
+            if "image_path" in eval_result:
+                del eval_result["image_path"]
+
+            write_json_atomic(Path(item["json_save_path"]), eval_result)
+
+            hash_cache[item["json_save_path"]] = {"id": item["id"], "image_hash": h}
+
+        # update canonical index for following groups/runs
+        hash_to_result[h] = rep_json_save_path
+    with open(hash_cache_path, "w", encoding="utf-8") as f:
+        json.dump(hash_cache, f, ensure_ascii=False, indent=2)
 
 
 def _inference_and_eval_single(args):
@@ -303,6 +686,7 @@ def _inference_and_eval_single(args):
         api_key,
         base_url,
         model_name,
+        step_key,
     ) = args
     return inference_and_eval_single(
         data,
@@ -314,6 +698,7 @@ def _inference_and_eval_single(args):
         api_key,
         base_url,
         model_name,
+        step_key,
     )
 
 
@@ -327,6 +712,8 @@ def inference_and_eval(
     api_key="",
     base_url=DEFAULT_BASE_URL,
     model_name=DEFAULT_MODEL_NAME,
+    step_key=None,
+    dedup_by_hash=False,
 ):
     with open(os.path.join(data_dir, "annotations", "All_Subjects.jsonl"), "r", encoding="utf-8") as f:
         all_data = [json.loads(line) for line in f.readlines()]
@@ -337,54 +724,63 @@ def inference_and_eval(
     else:
         sampled_ids = None
 
-    if max_workers > 0:
-        print(f"Evaluating with {max_workers} workers ...")
-        args_list = [
-            (
-                data,
-                img_save_dir,
-                eval_save_dir,
-                data_dir,
-                inference_function,
-                sampled_ids,
-                api_key,
-                base_url,
-                model_name,
-            )
-            for data in all_data
-        ]
+    if step_key == "step_all":
+        available_steps = _list_available_step_keys(all_data)
+        if not available_steps:
+            print("No stepN keys found in annotations.step_image_paths, nothing to evaluate for step_all.")
+            return
 
-        process_map(
-            _inference_and_eval_single,
-            args_list,
-            max_workers=max_workers,
-            desc="Evaluating",
-        )
-    else:
-        print("Evaluating without multiprocessing ...")
-        for data in tqdm(all_data):
-            inference_and_eval_single(
-                data,
-                img_save_dir,
-                eval_save_dir,
+        base_img_dir = img_save_dir
+        base_eval_dir = eval_save_dir
+        for sk in available_steps:
+            sk_img_dir = os.path.join(base_img_dir, sk)
+            sk_eval_dir = base_eval_dir
+            if os.path.basename(base_eval_dir.rstrip("/")) != f"eval_results_{sk}":
+                sk_eval_dir = os.path.join(os.path.dirname(base_eval_dir.rstrip("/")), f"eval_results_{sk}")
+
+            _run_eval_once(
+                all_data,
+                sk_img_dir,
+                sk_eval_dir,
                 data_dir,
                 inference_function,
                 sampled_ids,
                 api_key,
                 base_url,
                 model_name,
+                sk,
+                max_workers,
+                dedup_by_hash,
             )
+        return
+
+    _run_eval_once(
+        all_data,
+        img_save_dir,
+        eval_save_dir,
+        data_dir,
+        inference_function,
+        sampled_ids,
+        api_key,
+        base_url,
+        model_name,
+        step_key,
+        max_workers,
+        dedup_by_hash,
+    )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, default="./data")
     parser.add_argument("--img_save_dir", type=str, default="./gen_imgs")
+    parser.add_argument("--step_key", type=str, default=None, help="Target candidate step key, e.g. step1/step2/step3/final")
     parser.add_argument("--eval_save_dir", type=str, default="./eval_results")
     parser.add_argument("--run_inference", action="store_true")
     parser.add_argument("--mini", action="store_true")
     parser.add_argument("--sampled_id_path", type=str, default=None)
     parser.add_argument("--max_workers", type=int, default=-1)
+    parser.add_argument("--dedup_by_hash", action="store_true", help="Deduplicate repeated images by file hash and reuse eval results")
 
     parser.add_argument("--api_key", type=str, default=DEFAULT_API_KEY)
     parser.add_argument("--base_url", type=str, default=DEFAULT_BASE_URL)
@@ -441,4 +837,6 @@ if __name__ == "__main__":
         api_key=args.api_key,
         base_url=args.base_url,
         model_name=args.model_name,
+        step_key=args.step_key,
+        dedup_by_hash=args.dedup_by_hash,
     )

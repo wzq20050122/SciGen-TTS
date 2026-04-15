@@ -9,6 +9,15 @@ from datetime import datetime
 from glob import glob
 from typing import Any, Dict, List, Optional, Tuple
 
+
+def _write_json_atomic(path: str, data: Any) -> None:
+    tmp_path = path + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, path)
+
 import requests
 from PIL import Image
 from tqdm import tqdm
@@ -221,14 +230,27 @@ def _read_json(path: str) -> Dict[str, Any]:
         return json.load(f)
 
 
-def _discover_samples(run_dir: str) -> List[str]:
-    pattern = os.path.join(run_dir, "*", "step1", "verifier_parsed.json")
+def _discover_sample_steps(run_dir: str) -> List[Tuple[str, int]]:
+    pattern = os.path.join(run_dir, "*", "step*", "verifier_parsed.json")
     files = sorted(glob(pattern))
-    return [os.path.dirname(os.path.dirname(p)) for p in files]
+    results: List[Tuple[str, int]] = []
+    for p in files:
+        step_dir = os.path.dirname(p)
+        sample_dir = os.path.dirname(step_dir)
+        step_name = os.path.basename(step_dir)
+        if not step_name.startswith("step"):
+            continue
+        try:
+            step_num = int(step_name[4:])
+        except Exception:
+            continue
+        results.append((sample_dir, step_num))
+    return results
 
 
 def _process_one_sample(
     sample_dir: str,
+    step_num: int,
     api_key: str,
     base_url: str,
     model_name: str,
@@ -238,11 +260,11 @@ def _process_one_sample(
 ) -> Optional[Dict[str, Any]]:
     import time
 
-    step1_dir = os.path.join(sample_dir, "step1")
-    parsed_path = os.path.join(step1_dir, "verifier_parsed.json")
+    step_dir = os.path.join(sample_dir, f"step{step_num}")
+    parsed_path = os.path.join(step_dir, "verifier_parsed.json")
     source_path = os.path.join(sample_dir, "source_record.json")
-    image_path = os.path.join(step1_dir, "image.png")
-    out_path = os.path.join(step1_dir, "meta_judge_step1.json")
+    image_path = os.path.join(step_dir, "image.png")
+    out_path = os.path.join(step_dir, f"meta_judge_step{step_num}.json")
 
     if not os.path.exists(parsed_path) or not os.path.exists(source_path) or not os.path.exists(image_path):
         return None
@@ -263,8 +285,19 @@ def _process_one_sample(
     else:
         gt_image_path = None
 
+    checkpoint_path = os.path.join(step_dir, f"meta_judge_step{step_num}.checkpoint.json")
+    if os.path.exists(checkpoint_path) and not force:
+        try:
+            checkpoint = _read_json(checkpoint_path)
+            if checkpoint.get("status") == "done" and os.path.exists(out_path):
+                return _read_json(out_path)
+        except Exception:
+            pass
+
+    result: Dict[str, Any]
     last_err = None
     judge_raw: Optional[Dict[str, Any]] = None
+    _write_json_atomic(checkpoint_path, {"status": "running", "id": source_record.get("id"), "step": step_num, "updated_at": datetime.now().isoformat()})
     for _ in range(max_retries):
         try:
             judge_raw = call_gemini_judge(
@@ -286,6 +319,7 @@ def _process_one_sample(
             "id": source_record.get("id", os.path.basename(sample_dir)),
             "subject": source_record.get("subject", ""),
             "sample_dir": sample_dir,
+            "step": step_num,
             "judge_model": model_name,
             "judge_time": datetime.now().isoformat(),
             "error": last_err or "unknown_error",
@@ -301,14 +335,15 @@ def _process_one_sample(
             "id": source_record.get("id", os.path.basename(sample_dir)),
             "subject": source_record.get("subject", ""),
             "sample_dir": sample_dir,
+            "step": step_num,
             "judge_model": model_name,
             "judge_time": datetime.now().isoformat(),
             **norm,
             "edit_excluded": verifier_answer_true,
         }
 
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+    _write_json_atomic(out_path, result)
+    _write_json_atomic(checkpoint_path, {"status": "done", "id": result.get("id"), "step": step_num, "updated_at": datetime.now().isoformat()})
 
     return result
 
@@ -324,17 +359,42 @@ def evaluate_run(
     write_jsonl: bool = True,
     max_workers: int = 8,
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-    sample_dirs = _discover_samples(run_dir)
-    if not sample_dirs:
-        raise FileNotFoundError(f"No samples found under: {run_dir}")
+    sample_steps = _discover_sample_steps(run_dir)
+    if not sample_steps:
+        raise FileNotFoundError(f"No step verifier files found under: {run_dir}")
 
     records: List[Dict[str, Any]] = []
+    records_by_key: Dict[Tuple[str, int], Dict[str, Any]] = {}
+    progress_path = os.path.join(run_dir, "verifier_quality_progress.json")
+    existing_done: Dict[str, Dict[str, Any]] = {}
+    if os.path.exists(progress_path) and not force:
+        try:
+            existing_done = _read_json(progress_path)
+        except Exception:
+            existing_done = {}
 
     workers = max(1, int(max_workers))
+    pending_samples = []
+    for sample_dir, step_num in sample_steps:
+        key = f"{sample_dir}::step{step_num}"
+        if not force and key in existing_done and os.path.exists(os.path.join(sample_dir, f"step{step_num}", f"meta_judge_step{step_num}.json")):
+            rec = existing_done[key]
+            records.append(rec)
+            records_by_key[(sample_dir, step_num)] = rec
+        else:
+            pending_samples.append((sample_dir, step_num))
+
+    def _store_result(sample_dir: str, step_num: int, result: Dict[str, Any]) -> None:
+        records.append(result)
+        records_by_key[(sample_dir, step_num)] = result
+        existing_done[f"{sample_dir}::step{step_num}"] = result
+        _write_json_atomic(progress_path, existing_done)
+
     if workers == 1:
-        for sample_dir in tqdm(sample_dirs, desc="Judging verifier quality"):
+        for sample_dir, step_num in tqdm(pending_samples, desc="Judging verifier quality"):
             result = _process_one_sample(
                 sample_dir=sample_dir,
+                step_num=step_num,
                 api_key=api_key,
                 base_url=base_url,
                 model_name=model_name,
@@ -343,42 +403,43 @@ def evaluate_run(
                 sleep_seconds=sleep_seconds,
             )
             if result is not None:
-                records.append(result)
+                _store_result(sample_dir, step_num, result)
     else:
         with ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = [
+            future_map = {
                 executor.submit(
                     _process_one_sample,
                     sample_dir,
+                    step_num,
                     api_key,
                     base_url,
                     model_name,
                     force,
                     max_retries,
                     sleep_seconds,
-                )
-                for sample_dir in sample_dirs
-            ]
+                ): (sample_dir, step_num)
+                for sample_dir, step_num in pending_samples
+            }
 
-            for fut in tqdm(as_completed(futures), total=len(futures), desc=f"Judging verifier quality ({workers} workers)"):
+            for fut in tqdm(as_completed(future_map), total=len(future_map), desc=f"Judging verifier quality ({workers} workers)"):
+                sample_dir, step_num = future_map[fut]
                 try:
                     result = fut.result()
                     if result is not None:
-                        records.append(result)
+                        _store_result(sample_dir, step_num, result)
                 except Exception as e:
-                    records.append(
-                        {
-                            "id": "unknown",
-                            "subject": "",
-                            "sample_dir": "",
-                            "judge_model": model_name,
-                            "judge_time": datetime.now().isoformat(),
-                            "error": str(e),
-                            "answer_correct": False,
-                            "explanation_quality": 0.0,
-                            "edit_quality": 0.0,
-                        }
-                    )
+                    err = {
+                        "id": "unknown",
+                        "subject": "",
+                        "sample_dir": "",
+                        "judge_model": model_name,
+                        "judge_time": datetime.now().isoformat(),
+                        "error": str(e),
+                        "answer_correct": False,
+                        "explanation_quality": 0.0,
+                        "edit_quality": 0.0,
+                    }
+                    _store_result(sample_dir, step_num, err)
 
     total = len(records)
     valid = [r for r in records if not r.get("error")]
@@ -432,8 +493,7 @@ def evaluate_run(
     }
 
     summary_path = os.path.join(run_dir, "verifier_quality_summary.json")
-    with open(summary_path, "w", encoding="utf-8") as f:
-        json.dump(summary, f, ensure_ascii=False, indent=2)
+    _write_json_atomic(summary_path, summary)
 
     if write_jsonl:
         jsonl_path = os.path.join(run_dir, "verifier_quality.jsonl")
@@ -445,7 +505,7 @@ def evaluate_run(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Evaluate step1 verifier quality using DMX Gemini3-flash")
+    parser = argparse.ArgumentParser(description="Evaluate verifier quality for all available steps using DMX Gemini3-flash")
     parser.add_argument("--run_dir", type=str, required=True, help="TTS run directory, e.g. output_TTS/<safe_run_tag>")
     parser.add_argument("--api_key", type=str, default=DEFAULT_API_KEY)
     parser.add_argument("--base_url", type=str, default=DEFAULT_BASE_URL)

@@ -124,6 +124,7 @@ def collect_step_info(case_dir: Path, step_num: int) -> Dict[str, Any]:
     step_info = {
         "step": step_num,
         "step_dir": str(step_dir.resolve()),
+        "mode": editor_payload.get("mode"),
         "instruction": editor_payload.get("instruction"),
         "current_instruction": editor_payload.get("current_instruction"),
         "verifier": {
@@ -186,12 +187,39 @@ def load_relaxed_scores_from_dir(eval_dir: Path) -> Dict[str, float]:
     return out
 
 
+def load_step_relaxed_maps(judge_output_dir: Path) -> Dict[str, Dict[str, float]]:
+    """Load relaxed scores for each evaluated step folder under judge_output_dir.
+
+    Returns mapping like:
+      {
+        "step1": {id: score},
+        "step2": {id: score},
+        "final": {id: score},
+      }
+    """
+    step_maps: Dict[str, Dict[str, float]] = {}
+    if not judge_output_dir.exists() or not judge_output_dir.is_dir():
+        return step_maps
+
+    for p in sorted(judge_output_dir.iterdir()):
+        if not p.is_dir():
+            continue
+        name = p.name
+        if not name.startswith("eval_results_"):
+            continue
+        step_key = name.removeprefix("eval_results_")
+        if not step_key:
+            continue
+        step_maps[step_key] = load_relaxed_scores_from_dir(p)
+
+    return step_maps
+
+
 def process_case(
     case_dir: Path,
     out_root: Path,
     global_judge_map: Dict[str, Dict[str, Any]],
-    step1_relaxed_map: Dict[str, float],
-    final_relaxed_map: Dict[str, float],
+    step_relaxed_maps: Dict[str, Dict[str, float]],
 ) -> Optional[Path]:
     final_result = read_json(case_dir / "final_result.json")
     if not final_result:
@@ -219,13 +247,17 @@ def process_case(
     for step_num in step_nums:
         step_info = collect_step_info(case_dir, step_num)
 
-        # Prefer Judge_output relaxed scores when available
-        if step_num == 1 and str(case_id) in step1_relaxed_map:
-            step_info.setdefault("verifier", {})["relaxed_score"] = step1_relaxed_map[str(case_id)]
-            step_info.setdefault("verifier", {})["relaxed_score_source"] = "judge_output_eval_results_step1"
-        if step_num == int(final_result.get("steps_used", 0) or 0) and str(case_id) in final_relaxed_map:
-            step_info.setdefault("verifier", {})["relaxed_score"] = final_relaxed_map[str(case_id)]
-            step_info.setdefault("verifier", {})["relaxed_score_source"] = "judge_output_eval_results_final"
+        # Prefer per-step Judge_output relaxed scores when available.
+        case_id_str = str(case_id)
+        step_key = f"step{step_num}"
+        if step_key in step_relaxed_maps and case_id_str in step_relaxed_maps[step_key]:
+            step_info.setdefault("verifier", {})["relaxed_score"] = step_relaxed_maps[step_key][case_id_str]
+            step_info.setdefault("verifier", {})["relaxed_score_source"] = f"judge_output_eval_results_{step_key}"
+        elif step_num == int(final_result.get("steps_used", 0) or 0):
+            final_map = step_relaxed_maps.get("final", {})
+            if case_id_str in final_map:
+                step_info.setdefault("verifier", {})["relaxed_score"] = final_map[case_id_str]
+                step_info.setdefault("verifier", {})["relaxed_score_source"] = "judge_output_eval_results_final"
 
         # copy step image
         src_img = case_dir / f"step{step_num}" / "image.png"
@@ -255,12 +287,14 @@ def process_case(
     step1_relaxed_score = None
     final_relaxed_score = None
     final_relaxed_score_source = None
+    per_step_relaxed_scores: Dict[str, Optional[float]] = {}
 
     if steps_info:
         for s in steps_info:
-            if s.get("step") == 1:
+            step_num = int(s.get("step", 0) or 0)
+            per_step_relaxed_scores[f"step{step_num}"] = s.get("verifier", {}).get("relaxed_score")
+            if step_num == 1:
                 step1_relaxed_score = s.get("verifier", {}).get("relaxed_score")
-                break
         final_step_info = max(steps_info, key=lambda x: int(x.get("step", 0) or 0))
         final_relaxed_score = final_step_info.get("verifier", {}).get("relaxed_score")
         final_relaxed_score_source = final_step_info.get("verifier", {}).get("relaxed_score_source")
@@ -283,6 +317,7 @@ def process_case(
             "step1_relaxed_score": step1_relaxed_score,
             "final_relaxed_score": final_relaxed_score,
             "final_relaxed_score_source": final_relaxed_score_source,
+            "per_step_relaxed_scores": per_step_relaxed_scores,
             "step_details": steps_info,
             "judge_for_verifier_global": {
                 "answer_correct": global_judge.get("answer_correct"),
@@ -314,14 +349,12 @@ def main() -> None:
 
     global_judge_map = read_jsonl_map(input_dir / "verifier_quality.jsonl", key="id")
 
-    # load step1 relaxed scores
-    step1_relaxed_map = load_relaxed_scores_from_dir(judge_output_dir / "eval_results_step1")
-
-    # load final relaxed scores from multiple possible folders
-    final_relaxed_map: Dict[str, float] = {}
-    final_relaxed_map.update(load_relaxed_scores_from_dir(judge_output_dir / "eval_results_final"))
-    final_relaxed_map.update(load_relaxed_scores_from_dir(judge_output_dir / "eval_results_same_source"))
-    final_relaxed_map.update(load_relaxed_scores_from_dir(judge_output_dir / "eval_results_shared"))
+    # load per-step relaxed scores from all eval_results_* folders
+    step_relaxed_maps = load_step_relaxed_maps(judge_output_dir)
+    # shared/same_source belong to final-equivalent cases; merge into final view.
+    final_map = step_relaxed_maps.setdefault("final", {})
+    final_map.update(load_relaxed_scores_from_dir(judge_output_dir / "eval_results_same_source"))
+    final_map.update(load_relaxed_scores_from_dir(judge_output_dir / "eval_results_shared"))
 
     case_dirs = sorted([p for p in input_dir.iterdir() if p.is_dir() and (p / "final_result.json").exists()])
 
@@ -331,8 +364,7 @@ def main() -> None:
             case_dir,
             output_dir,
             global_judge_map,
-            step1_relaxed_map,
-            final_relaxed_map,
+            step_relaxed_maps,
         )
         if out_json:
             generated.append(str(out_json))
