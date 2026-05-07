@@ -31,6 +31,10 @@ DEFAULT_EDIT_MODEL = os.environ.get("DMX_IMAGE_EDIT_MODEL", os.environ.get("DMX_
 DEFAULT_EDIT_URL = f"{DEFAULT_BASE_URL.rstrip('/')}/images/edits"
 DEFAULT_GEN_URL = f"{DEFAULT_BASE_URL.rstrip('/')}/images/generations"
 DEFAULT_RESPONSES_URL = f"{DEFAULT_BASE_URL.rstrip('/')}/responses"
+DEFAULT_GEMINI_URL = os.environ.get(
+    "DMX_GEMINI_URL",
+    f"{DEFAULT_BASE_URL.rstrip('/')}/v1beta/models/gemini-2.5-flash-image:generateContent",
+)
 
 # Allow endpoint override for non-OpenAI image families (e.g., wan/qwen/doubao).
 DEFAULT_GEN_URL = os.environ.get("DMX_IMAGE_GEN_URL", DEFAULT_GEN_URL)
@@ -45,6 +49,28 @@ QWEN_IMAGE_MAX_ALLOWED_SIZES = (
     (1104, 1472),
     (928, 1664),
 )
+
+DOUBAO_SEEDREAM_5_LITE_2K_SIZES = {
+    "1:1": "2048x2048",
+    "4:3": "2304x1728",
+    "3:4": "1728x2304",
+    "16:9": "2848x1600",
+    "9:16": "1600x2848",
+    "3:2": "2496x1664",
+    "2:3": "1664x2496",
+    "21:9": "3136x1344",
+}
+
+DOUBAO_SEEDREAM_5_LITE_3K_SIZES = {
+    "1:1": "3072x3072",
+    "4:3": "3456x2592",
+    "3:4": "2592x3456",
+    "16:9": "4096x2304",
+    "9:16": "2304x4096",
+    "3:2": "3744x2496",
+    "2:3": "2496x3744",
+    "21:9": "4704x2016",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -108,21 +134,27 @@ def model_uses_responses(model_name: str) -> bool:
         "qwen-image-plus",
         "qwen-image-edit-max",
         "qwen-image-edit-plus",
+        "doubao-seedream-5.0-lite",
     )
     return model.startswith(responses_prefixes)
+
+
+def model_uses_gemini(model_name: str) -> bool:
+    model = (model_name or "").strip().lower()
+    return model.startswith("gemini-2.5-flash-image")
 
 
 def resolve_endpoint_url(explicit_url: str, *, model_name: str, fallback_url: str) -> str:
     if explicit_url:
         return explicit_url
+    if model_uses_gemini(model_name):
+        return DEFAULT_GEMINI_URL
     if model_uses_responses(model_name):
         return DEFAULT_RESPONSES_URL
     return fallback_url
 
 
 def parse_size(size: str) -> tuple[int, int] | None:
-    if not isinstance(size, str):
-        return None
     match = re.fullmatch(r"\s*(\d+)\s*[x*]\s*(\d+)\s*", size)
     if not match:
         return None
@@ -142,12 +174,48 @@ def normalize_model_size(size: str, *, model_name: str) -> str:
             key=lambda wh: abs((wh[0] / wh[1]) - target_ratio),
         )
         return f"{best_w}*{best_h}"
+    if model.startswith("doubao-seedream-5.0-lite"):
+        normalized = str(size).strip()
+        if normalized in {"2K", "3K"}:
+            return normalized
+        if normalized in DOUBAO_SEEDREAM_5_LITE_2K_SIZES:
+            return DOUBAO_SEEDREAM_5_LITE_2K_SIZES[normalized]
+        if normalized in DOUBAO_SEEDREAM_5_LITE_3K_SIZES:
+            return DOUBAO_SEEDREAM_5_LITE_3K_SIZES[normalized]
+        parsed = parse_size(normalized)
+        if parsed is not None:
+            target_w, target_h = parsed
+            if target_w * target_h >= 2_560 * 1_440:
+                if target_w * target_h >= 3_744 * 2_496:
+                    best_map = DOUBAO_SEEDREAM_5_LITE_3K_SIZES
+                else:
+                    best_map = DOUBAO_SEEDREAM_5_LITE_2K_SIZES
+                target_ratio = target_w / max(target_h, 1)
+                best_key = min(
+                    best_map,
+                    key=lambda ratio: abs((parse_size(best_map[ratio])[0] / parse_size(best_map[ratio])[1]) - target_ratio),
+                )
+                return best_map[best_key]
+            return "2048x2048"
+        return "2K"
     return normalize_size(size)
 
 
 def _to_data_url(image_path: Path) -> str:
     image_b64 = base64.b64encode(image_path.read_bytes()).decode("utf-8")
     return f"data:{mime_type_for(image_path)};base64,{image_b64}"
+
+
+def _extract_response_image_url(item: dict[str, Any]) -> str | None:
+    url = item.get("url")
+    if isinstance(url, str) and url.startswith(("http://", "https://")):
+        return url
+    image_url = item.get("image_url")
+    if isinstance(image_url, dict):
+        url = image_url.get("url")
+        if isinstance(url, str) and url.startswith(("http://", "https://")):
+            return url
+    return None
 
 
 def _responses_raise_with_details(response: requests.Response, model_name: str, url: str) -> None:
@@ -159,6 +227,9 @@ def _responses_raise_with_details(response: requests.Response, model_name: str, 
             details = response.text
         except Exception:
             pass
+        print(f"[DMXAPI ERROR] model={model_name} url={url} status={response.status_code}")
+        if details:
+            print(f"[DMXAPI ERROR BODY] {details}")
         raise requests.HTTPError(
             f"{e}. model={model_name}, url={url}, response={details}",
             response=response,
@@ -172,12 +243,42 @@ def _json_post(url: str, payload: dict, model_name: str) -> dict:
 
 
 def call_generate(prompt: str, size: str, model_name: str) -> dict:
+    if model_uses_gemini(model_name):
+        url = resolve_endpoint_url(
+            os.environ.get("DMX_GEMINI_URL", ""),
+            model_name=model_name,
+            fallback_url=DEFAULT_GEMINI_URL,
+        )
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "imageConfig": {
+                    "aspectRatio": normalize_model_size(size, model_name=model_name),
+                }
+            },
+        }
+        return _json_post(url, payload, model_name)
+
     url = resolve_endpoint_url(
         os.environ.get("DMX_IMAGE_GEN_URL", ""),
         model_name=model_name,
         fallback_url=f"{DEFAULT_BASE_URL.rstrip('/')}/images/generations",
     )
     if endpoint_uses_responses(url):
+        if model_name.strip().lower().startswith("doubao-seedream-5.0-lite"):
+            payload = {
+                "model": model_name,
+                "input": prompt,
+                "size": normalize_model_size(size, model_name=model_name),
+                "sequential_image_generation": "disabled",
+                "sequential_image_generation_options": {"max_images": 1},
+                "stream": False,
+                "output_format": "png",
+                "response_format": "url",
+                "watermark": False,
+            }
+            return _json_post(url, payload, model_name)
+
         payload = {
             "model": model_name,
             "input": {
@@ -213,12 +314,55 @@ def call_generate(prompt: str, size: str, model_name: str) -> dict:
 
 
 def call_edit(previous_image: Path, prompt: str, size: str, model_name: str) -> dict:
+    if model_uses_gemini(model_name):
+        url = resolve_endpoint_url(
+            os.environ.get("DMX_GEMINI_URL", ""),
+            model_name=model_name,
+            fallback_url=DEFAULT_GEMINI_URL,
+        )
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": prompt},
+                        {
+                            "inline_data": {
+                                "mime_type": mime_type_for(previous_image),
+                                "data": _to_data_url(previous_image).split(",", 1)[1],
+                            }
+                        },
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "imageConfig": {
+                    "aspectRatio": normalize_model_size(size, model_name=model_name),
+                }
+            },
+        }
+        return _json_post(url, payload, model_name)
+
     url = resolve_endpoint_url(
         os.environ.get("DMX_IMAGE_EDIT_URL", ""),
         model_name=model_name,
         fallback_url=f"{DEFAULT_BASE_URL.rstrip('/')}/images/edits",
     )
     if endpoint_uses_responses(url):
+        if model_name.strip().lower().startswith("doubao-seedream-5.0-lite"):
+            payload = {
+                "model": model_name,
+                "input": prompt,
+                "image": _to_data_url(previous_image),
+                "size": normalize_model_size(size, model_name=model_name),
+                "sequential_image_generation": "disabled",
+                "sequential_image_generation_options": {"max_images": 1},
+                "stream": False,
+                "output_format": "png",
+                "response_format": "url",
+                "watermark": False,
+            }
+            return _json_post(url, payload, model_name)
+
         payload = {
             "model": model_name,
             "input": {
@@ -330,6 +474,10 @@ def extract_image_bytes(response_json: dict[str, Any]) -> bytes:
                     if val.startswith(("http://", "https://")):
                         return requests.get(val, timeout=300).content
 
+            url = _extract_response_image_url(item)
+            if url:
+                return requests.get(url, timeout=300).content
+
             content = item.get("content")
             if isinstance(content, list):
                 for c in content:
@@ -343,6 +491,9 @@ def extract_image_bytes(response_json: dict[str, Any]) -> bytes:
                                 return decoded
                             if val.startswith(("http://", "https://")):
                                 return requests.get(val, timeout=300).content
+                    url = _extract_response_image_url(c)
+                    if url:
+                        return requests.get(url, timeout=300).content
 
     raise RuntimeError(f"No image found in response: {response_json}")
 

@@ -2,8 +2,8 @@
 import json
 from pathlib import Path
 
-SRC_DIR = Path("/root/autodl-tmp/TTS/Dataset/step1_每个种类10条")
-DST_DIR = Path("/root/autodl-tmp/TTS/Dataset/step2_修正图片路径")
+SRC_DIR = Path("/root/autodl-tmp/TTS/Dataset_v1/step1_找出mini数据集")
+DST_DIR = Path("/root/autodl-tmp/TTS/Dataset_v1/step2_修正图片路径")
 IMAGE_PREFIX = "/root/autodl-tmp/TTS/GenExam/data/images/"
 
 

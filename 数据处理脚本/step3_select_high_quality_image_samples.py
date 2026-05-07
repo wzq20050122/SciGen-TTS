@@ -8,7 +8,7 @@ from PIL import Image
 
 SRC_DIR = Path("/root/autodl-tmp/TTS/GenExam/data/annotations")
 IMAGE_ROOT = Path("/root/autodl-tmp/TTS/GenExam/data/images")
-DST_DIR = Path("/root/autodl-tmp/TTS/Dataset/step3_重新找到高质量图片")
+DST_DIR = Path("/root/autodl-tmp/TTS/Dataset_v1/step3_重新找到高质量图片")
 EXCLUDE_FILE = "All_Subjects.jsonl"
 SAMPLE_SIZE = 2
 TARGET_SIZES = [

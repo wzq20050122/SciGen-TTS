@@ -16,6 +16,7 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
+from urllib import request as urllib_request
 
 from PIL import Image
 
@@ -196,6 +197,234 @@ def run_template(template: str, *, payload_json: Path, output_path: Path, work_d
         raise RuntimeError(f"命令执行失败: {cmd}；日志见 {log_path}")
 
 
+def _normalize_dmx_model_name(model_name: str) -> str:
+    model = (model_name or "").strip()
+    if not model:
+        return "doubao-seedream-5.0-lite"
+    aliases = {
+        "seedream-5.0-lite": "doubao-seedream-5.0-lite",
+        "doubao-seedream-5.0": "doubao-seedream-5.0-lite",
+    }
+    return aliases.get(model, model)
+
+
+def _extract_image_urls_from_response(data: Any) -> list[str]:
+    urls: list[str] = []
+    if isinstance(data, dict):
+        for item in data.get("output", []) or []:
+            if not isinstance(item, dict):
+                continue
+            if item.get("type") == "image_url":
+                url = (item.get("image_url") or {}).get("url")
+                if url:
+                    urls.append(url)
+            content = item.get("content") or []
+            for content_item in content:
+                if isinstance(content_item, dict):
+                    text = content_item.get("text") or content_item.get("delta") or ""
+                    urls.extend(re.findall(r"https?://[^\s)\]]+", text))
+    return urls
+
+
+def _download_url_to_path(url: str, output_path: Path) -> None:
+    req = urllib_request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib_request.urlopen(req, timeout=180) as resp:
+        output_path.write_bytes(resp.read())
+
+
+def _call_dmx_responses(payload: Dict[str, Any], output_path: Path, *, retries: int = 2, wait: float = 5.0) -> None:
+    api_key = os.environ.get("DMX_API_KEY") or os.environ.get("DMXAPI_API_KEY")
+    if not api_key:
+        raise RuntimeError("请先设置 DMX_API_KEY 或 DMXAPI_API_KEY")
+
+    url = os.environ.get("DMX_API_URL", "https://www.dmxapi.cn/v1/responses")
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    last_error: Exception | None = None
+    for attempt in range(retries + 1):
+        try:
+            req = urllib_request.Request(url, data=body, headers=headers, method="POST")
+            with urllib_request.urlopen(req, timeout=600) as resp:
+                response_text = resp.read().decode("utf-8", errors="replace")
+            response_data = json.loads(response_text)
+            urls = _extract_image_urls_from_response(response_data)
+            if not urls:
+                raise RuntimeError(f"接口未返回图片链接: {response_text[:500]}")
+            _download_url_to_path(urls[0], output_path)
+            return
+        except Exception as exc:
+            last_error = exc
+            if attempt >= retries:
+                break
+            time.sleep(wait * (attempt + 1))
+    assert last_error is not None
+    raise last_error
+
+
+def _call_dmx_gemini_generate_content(payload: Dict[str, Any], output_path: Path, *, retries: int = 2, wait: float = 5.0) -> None:
+    api_key = os.environ.get("DMX_API_KEY") or os.environ.get("DMXAPI_API_KEY")
+    if not api_key:
+        raise RuntimeError("请先设置 DMX_API_KEY 或 DMXAPI_API_KEY")
+
+    url = os.environ.get(
+        "DMX_GEMINI_URL",
+        "https://www.dmxapi.cn/v1beta/models/gemini-2.5-flash-image:generateContent",
+    )
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": api_key,
+    }
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    last_error: Exception | None = None
+    for attempt in range(retries + 1):
+        try:
+            req = urllib_request.Request(url, data=body, headers=headers, method="POST")
+            with urllib_request.urlopen(req, timeout=600) as resp:
+                response_text = resp.read().decode("utf-8", errors="replace")
+            response_data = json.loads(response_text)
+            candidates = response_data.get("candidates") or []
+            if not candidates:
+                raise RuntimeError(f"Gemini 接口未返回 candidates: {response_text[:500]}")
+            content = (candidates[0].get("content") or {}) if isinstance(candidates[0], dict) else {}
+            parts = content.get("parts") if isinstance(content, dict) else None
+            if not isinstance(parts, list):
+                raise RuntimeError(f"Gemini 响应中没有 parts: {response_text[:500]}")
+            for part in parts:
+                if not isinstance(part, dict):
+                    continue
+                inline = part.get("inlineData") or part.get("inline_data")
+                if isinstance(inline, dict):
+                    data = inline.get("data")
+                    if isinstance(data, str) and data:
+                        raw = base64.b64decode(data)
+                        output_path.write_bytes(raw)
+                        return
+            raise RuntimeError(f"Gemini 响应中没有图片数据: {response_text[:500]}")
+        except Exception as exc:
+            last_error = exc
+            if attempt >= retries:
+                break
+            time.sleep(wait * (attempt + 1))
+    assert last_error is not None
+    raise last_error
+
+
+def _route_dmx_model_family(model_name: str) -> str:
+    model = (model_name or "").strip().lower()
+    if model.startswith("wan2.6"):
+        return "wan2.6"
+    if model.startswith("gemini-2.5-flash-image"):
+        return "gemini-2.5-flash-image"
+    return "doubao-seedream-5.0-lite"
+
+
+def _build_wan26_payload(*, prompt: str, image: Optional[Path], output_path: Path, target_size: str, n: int = 1, negative_prompt: str = "", seed: Optional[int] = 42, prompt_extend: bool = True, watermark: bool = False) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {
+        "model": "wan2.6-t2i",
+        "input": {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"text": prompt}
+                    ],
+                }
+            ]
+        },
+        "parameters": {
+            "prompt_extend": prompt_extend,
+            "watermark": watermark,
+            "n": n,
+            "enable_interleave": False,
+            "negative_prompt": negative_prompt,
+            "size": target_size,
+        },
+    }
+    if seed is not None:
+        payload["parameters"]["seed"] = seed
+    if image is not None:
+        payload["image"] = image_to_data_url(image)
+    payload["output_image_path"] = str(output_path)
+    return payload
+
+
+def _build_seedream_payload(*, prompt: str, image: Optional[Path], output_path: Path, target_size: str, stream: bool = False, n: int = 1, watermark: bool = False, output_format: str = "png") -> Dict[str, Any]:
+    payload: Dict[str, Any] = {
+        "model": "doubao-seedream-5.0-lite",
+        "input": prompt,
+        "size": target_size,
+        "sequential_image_generation": "disabled" if n == 1 else "auto",
+        "sequential_image_generation_options": {"max_images": max(1, min(int(n), 15))},
+        "stream": stream,
+        "output_format": output_format,
+        "response_format": "url",
+        "watermark": watermark,
+    }
+    # 5.0-lite 文档支持 optimize_prompt_options，但这里默认不显式传，避免触发额外提示词改写逻辑。
+    if image is not None:
+        payload["image"] = image_to_data_url(image)
+    payload["output_image_path"] = str(output_path)
+    return payload
+
+
+def _build_gemini_payload(*, prompt: str, image: Optional[Path], target_size: str, output_path: Path) -> Dict[str, Any]:
+    aspect_ratio = "1:1"
+    if target_size in {"16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "21:9", "5:4", "4:5"}:
+        aspect_ratio = target_size
+    elif "x" in target_size:
+        try:
+            w, h = [int(x) for x in target_size.lower().split("x", 1)]
+            if w > h:
+                aspect_ratio = "16:9" if w / h >= 1.7 else "4:3"
+            elif h > w:
+                aspect_ratio = "9:16" if h / w >= 1.7 else "3:4"
+        except Exception:
+            aspect_ratio = "1:1"
+    contents_parts: list[dict[str, Any]] = [{"text": prompt}]
+    if image is not None:
+        image_data_url = image_to_data_url(image)
+        contents_parts.append(
+            {
+                "inline_data": {
+                    "mime_type": image_data_url.split(";", 1)[0].split(":", 1)[1],
+                    "data": image_data_url.split(",", 1)[1],
+                }
+            }
+        )
+    payload: Dict[str, Any] = {
+        "model": "gemini-2.5-flash-image",
+        "contents": [{"parts": contents_parts}],
+        "generationConfig": {"imageConfig": {"aspectRatio": aspect_ratio}},
+        "output_image_path": str(output_path),
+    }
+    return payload
+
+
+def generate_image_file(payload: Dict[str, Any], output_path: Path, *, work_dir: Path) -> None:
+    provider = os.environ.get("DMX_IMAGE_PROVIDER", "template").strip().lower()
+    model_family = (payload.get("model_family") or "").strip().lower()
+    if provider == "dmxapi":
+        if model_family == "gemini-2.5-flash-image":
+            gemini_payload = {
+                "model": "gemini-2.5-flash-image",
+                "contents": payload.get("contents") or [{"parts": [{"text": payload.get("current_instruction") or payload.get("instruction") or ""}]}],
+                "generationConfig": payload.get("generationConfig") or {"imageConfig": {"aspectRatio": payload.get("target_size") or "1:1"}},
+            }
+            _call_dmx_gemini_generate_content(gemini_payload, output_path)
+            return
+        _call_dmx_responses(payload, output_path)
+        return
+    run_template(
+        os.environ.get("IMAGE_EDITOR_CMD_TEMPLATE", ""),
+        payload_json=work_dir / "editor_payload.json",
+        output_path=output_path,
+        work_dir=work_dir,
+    )
+
+
 def extract_answer(text: str) -> Optional[bool]:
     m = re.search(r"<answer>\s*(true|false)\s*</answer>", text, re.I | re.S)
     if m:
@@ -337,9 +566,8 @@ def build_regeneration_instruction(original_instruction: str, edit_checklist: Op
     )
 
 
-def build_edit_instruction(original_instruction: str, edit_checklist: Optional[str]) -> str:
+def build_edit_instruction(edit_checklist: Optional[str]) -> str:
     """Build edit prompt that preserves correct parts and applies local fixes."""
-    original_clean = (original_instruction or "").strip()
     checklist_clean = (edit_checklist or "").strip()
     if not checklist_clean:
         checklist_clean = "- Ensure all explicit requirements are satisfied."
@@ -347,9 +575,7 @@ def build_edit_instruction(original_instruction: str, edit_checklist: Optional[s
     return (
         "Edit the existing image and preserve already-correct content.\n"
         "Apply the checklist item by item:\n"
-        f"{checklist_clean}\n\n"
-        "Original instruction (for reference):\n"
-        f"{original_clean}"
+        f"{checklist_clean}"
     )
 
 
@@ -403,7 +629,29 @@ def decide_retry_action(edit_raw: Optional[str], edit_checklist: Optional[str], 
     return "regenerate"
 
 
-def infer_target_size(image_path: Optional[str]) -> str:
+def infer_target_size(image_path: Optional[str], *, family: str, mode: str) -> str:
+    if family == "doubao-seedream-5.0-lite":
+        if not image_path or not Path(image_path).exists():
+            return "2K"
+        with Image.open(image_path) as img:
+            width, height = img.size
+        if width == height:
+            return "2K"
+        if width > height:
+            return "2848x1600" if width / max(height, 1) >= 1.7 else "2496x1664"
+        return "1600x2848" if height / max(width, 1) >= 1.7 else "1664x2496"
+
+    if family == "wan2.6":
+        if mode == "generate" or not image_path or not Path(image_path).exists():
+            return "1280*1280"
+        with Image.open(image_path) as img:
+            width, height = img.size
+        if width == height:
+            return "1280*1280"
+        if width > height:
+            return "1280*960" if width / max(height, 1) < 1.7 else "1280*720"
+        return "960*1280" if height / max(width, 1) < 1.7 else "720*1280"
+
     if not image_path or not Path(image_path).exists():
         return "auto"
     with Image.open(image_path) as img:
@@ -463,12 +711,7 @@ def run_editor(payload: Dict[str, Any], payload_path: Path, output_image: Path, 
     write_json_atomic(payload_path, payload)
 
     def _execute() -> None:
-        run_template(
-            os.environ.get("IMAGE_EDITOR_CMD_TEMPLATE", ""),
-            payload_json=payload_path,
-            output_path=output_image,
-            work_dir=work_dir,
-        )
+        generate_image_file(payload, output_image, work_dir=work_dir)
         if not output_image.exists():
             raise RuntimeError(f"图片未生成: {output_image}")
 
@@ -572,7 +815,7 @@ def process_record(record: Dict[str, Any], idx: int, args: argparse.Namespace) -
         retry_action = decide_retry_action(parsed.get("edit"), cleaned_edit, args)
         if retry_action == "edit":
             prev_image = image_path
-            current_instruction = build_edit_instruction(record["prompt"], cleaned_edit)
+            current_instruction = build_edit_instruction(cleaned_edit)
         else:
             prev_image = None
             current_instruction = build_regeneration_instruction(record["prompt"], cleaned_edit)
@@ -599,23 +842,69 @@ def process_record(record: Dict[str, Any], idx: int, args: argparse.Namespace) -
 
         prev_info = history[-1] if history else {}
         mode = "initial" if step == 1 else ("edit" if prev_image else "regenerate")
+        provider = os.environ.get("DMX_IMAGE_PROVIDER", "dmxapi").strip().lower()
+        model_name = _normalize_dmx_model_name(os.environ.get("DMX_IMAGE_EDIT_MODEL", os.environ.get("DMX_IMAGE_GEN_MODEL", "doubao-seedream-5.0-lite")))
+        family = _route_dmx_model_family(model_name)
+        target_size = infer_target_size(record.get("image_path"), family=family, mode="generate" if step == 1 else mode)
+        base_image = None if step == 1 else prev_image
+
+        if family == "wan2.6":
+            base_payload = _build_wan26_payload(
+                prompt=current_instruction,
+                image=base_image,
+                output_path=image_path,
+                target_size=target_size,
+                n=1,
+                negative_prompt=os.environ.get("WAN26_NEGATIVE_PROMPT", ""),
+                seed=int(os.environ["WAN26_SEED"]) if os.environ.get("WAN26_SEED") else 42,
+                prompt_extend=os.environ.get("WAN26_PROMPT_EXTEND", "true").strip().lower() in {"1", "true", "yes", "y"},
+                watermark=os.environ.get("WAN26_WATERMARK", "false").strip().lower() in {"1", "true", "yes", "y"},
+            )
+        elif family == "gemini-2.5-flash-image":
+            base_payload = _build_gemini_payload(
+                prompt=current_instruction,
+                image=base_image,
+                target_size=target_size,
+                output_path=image_path,
+            )
+        else:
+            base_payload = _build_seedream_payload(
+                prompt=current_instruction,
+                image=base_image,
+                output_path=image_path,
+                target_size=target_size,
+                stream=False,
+                n=1,
+                watermark=False,
+                output_format="png",
+            )
+
+        if family == "gemini-2.5-flash-image":
+            base_payload.update({
+                "input": current_instruction,
+                "image": None if base_image is None else image_to_data_url(base_image),
+            })
+
+        base_payload.update({
+            "task_type": "tts_image_generation" if base_image is None else "tts_image_editing",
+            "provider": provider,
+            "step": step,
+            "mode": mode,
+            "record": record,
+            "instruction": record["prompt"],
+            "current_instruction": current_instruction,
+            "previous_image": str(prev_image) if prev_image else None,
+            "reference_image": None if base_image is None else str(base_image),
+            "target_size": target_size,
+            "verifier_explanation": None,
+            "verifier_edit": clean_edit_checklist(prev_info.get("edit")),
+            "output_image_path": str(image_path),
+            "sample_dir": str(sample_dir),
+            "step_dir": str(step_dir),
+            "model_family": family,
+        })
         run_editor(
-            {
-                "task_type": "tts_image_editing",
-                "step": step,
-                "mode": mode,
-                "record": record,
-                "instruction": record["prompt"],
-                "current_instruction": current_instruction,
-                "previous_image": str(prev_image) if prev_image else None,
-                "reference_image": record.get("image_path"),
-                "target_size": infer_target_size(record.get("image_path")),
-                "verifier_explanation": None,
-                "verifier_edit": clean_edit_checklist(prev_info.get("edit")),
-                "output_image_path": str(image_path),
-                "sample_dir": str(sample_dir),
-                "step_dir": str(step_dir),
-            },
+            base_payload,
             editor_payload,
             image_path,
             step_dir,
@@ -657,7 +946,7 @@ def process_record(record: Dict[str, Any], idx: int, args: argparse.Namespace) -
         retry_action = decide_retry_action(parsed["edit"], cleaned_edit, args)
         if retry_action == "edit":
             prev_image = image_path
-            current_instruction = build_edit_instruction(record["prompt"], cleaned_edit)
+            current_instruction = build_edit_instruction(cleaned_edit)
         else:
             prev_image = None
             current_instruction = build_regeneration_instruction(record["prompt"], cleaned_edit)
@@ -683,6 +972,7 @@ def main() -> None:
     # Expose selected models to editor runner via environment.
     os.environ["DMX_IMAGE_GEN_MODEL"] = args.gen_model
     os.environ["DMX_IMAGE_EDIT_MODEL"] = args.edit_model
+    os.environ.setdefault("DMX_IMAGE_PROVIDER", "dmxapi")
 
     ensure_dir(args.output_dir)
     if not args.input_dir.exists():
